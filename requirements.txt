@@ -1,0 +1,8 @@
+APScheduler==3.0.1
+Flask==0.10.1
+lxml==3.3.3
+Twisted==14.0.0
+Scrapy==0.24.4
+gunicorn==19.1.1
+futures==2.2.0
+w3lib==1.10.0
