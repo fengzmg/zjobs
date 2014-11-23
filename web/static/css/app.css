@@ -3,6 +3,11 @@
 	font-size: 14px;
 }
 
+.table-toolbar{
+	text-align: right;
+	margin-bottom: 10px;
+}
+
 #page_no_box{
 	width: 70px;
 	text-align: center;

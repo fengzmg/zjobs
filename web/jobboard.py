@@ -1,4 +1,5 @@
-from flask import Flask, redirect, url_for
+# -*- coding: utf-8 -*-
+from flask import Flask, redirect, url_for, make_response
 from flask.templating import render_template
 from flask import g, request
 #import sqlite3 as dbi
@@ -6,14 +7,20 @@ import pg8000 as dbi
 import config
 import json
 import os
-from run_crawler import run_crawler
+import unicodecsv
+import tempfile
+
 from run_housekeeping import run_housekeeping
 
 app = Flask(__name__)
 
+property_names = ['job_title', 'job_desc', 'job_details_link', 'job_location', 'job_country',
+                      'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
+
 def connect_db():
     #return dbi.connect(config.DB_FILE)
     return dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+
 @app.before_request
 def before_request():
     g.db_conn = connect_db()
@@ -33,7 +40,7 @@ def index():
 def render_html(html_file_name):
     return render_template(html_file_name + '.html')
 
-@app.route('/jobs', methods=['POST'])
+@app.route('/jobs', methods=['GET','POST'])
 def get_jobs():
     # Getting the pagination information
     page_request = request.json
@@ -48,9 +55,6 @@ def get_jobs():
     #         SELECT * FROM CRAWLED_JOBS ORDER BY publish_date DESC \
     #     ) AS RESULT LIMIT ? OFFSET ?  ', (page_size, page_size*(page_no-1) ) )
 
-    property_names = ['job_title', 'job_desc', 'job_details_link', 'job_location', 'job_country',
-                      'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
-    
     c.execute('SELECT * FROM ( \
             SELECT ' + ','.join(property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC \
         ) AS RESULT LIMIT %s OFFSET %s  ', (page_size, page_size*(page_no-1) ) )
@@ -66,6 +70,26 @@ def get_jobs():
     paged_result['total_pages'] = paged_result['total_count'] / page_size + 1 if paged_result['total_count'] % page_size != 0 else  paged_result['total_count'] / page_size
     
     return json.dumps(paged_result, default=date_handler)
+
+@app.route('/extract/csv')
+def extract_to_csv():
+    tmp_file = (tempfile.NamedTemporaryFile()).name
+    #tmp_file = '/apps/jobcrawler/extract.csv'
+    c = g.db_conn.cursor()
+    c.execute('SELECT ' + ','.join(property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
+    rows = c.fetchall()
+
+    with open(tmp_file, 'w') as f:
+        writer = unicodecsv.writer(f, encoding='utf-8')
+        writer.writerow(property_names)
+        for row in rows:
+            writer.writerow(row)
+        response = make_response(open(tmp_file, 'rb').read())
+        response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs.csv"
+    
+    return response
+
+
 
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():
