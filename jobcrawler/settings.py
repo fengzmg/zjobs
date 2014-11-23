@@ -27,8 +27,10 @@ ITEM_PIPELINES = {
 }
 
 LOG_LEVEL = 'INFO'
-FEED_FORMAT = 'csv'
-FEED_URI = 'file://' + config.APP_HOME + '/crawled_jobs_%(name)s.csv'
+
+if config.EXPORT_TO_FILE_ENABLED:
+    FEED_FORMAT = 'csv'
+    FEED_URI = 'file://' + config.APP_HOME + '/crawled_jobs_%(name)s.csv'
 
 CONCURRENT_REQUESTS = 200
 COOKIES_ENABLED = False

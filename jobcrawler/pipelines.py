@@ -6,13 +6,12 @@
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 import re
 # from pymongo import MongoClient
-import datetime
 from scrapy.exceptions import DropItem
 from scrapy import log
 # import sqlite3 as dbi # uncomment if using sqlite3
 import pg8000 as dbi
 import config
-import traceback
+#import traceback
 
 
 class ItemPrintingPipeline(object):

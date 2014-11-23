@@ -6,7 +6,6 @@
 # http://doc.scrapy.org/en/latest/topics/items.html
 
 import scrapy
-import json
 
 
 class JobItem(scrapy.Item):

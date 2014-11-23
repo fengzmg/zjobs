@@ -31,8 +31,9 @@ def setup_crawler(spider_types):
         settings = get_project_settings()
         spider = spider_type()
 
-        file_to_remove = '/apps/jobcrawler/crawled_jobs_%s.csv' % spider.name
-        os.remove(file_to_remove) if os.path.exists(file_to_remove) else None
+        if config.EXPORT_TO_FILE_ENABLED:
+            file_to_remove = '/apps/jobcrawler/crawled_jobs_%s.csv' % spider.name
+            os.remove(file_to_remove) if os.path.exists(file_to_remove) else None
 
         crawler = Crawler(settings)
         crawler.configure()
@@ -89,6 +90,7 @@ def refresh_database():
     conn.close()
 
 def run_crawler():
+
     if config.REFRESH_DB_ENABLED:
         refresh_database()
 

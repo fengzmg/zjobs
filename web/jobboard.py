@@ -1,10 +1,13 @@
-from flask import Flask
+from flask import Flask, redirect, url_for
 from flask.templating import render_template
 from flask import g, request
 #import sqlite3 as dbi
 import pg8000 as dbi
 import config
 import json
+import os
+from run_crawler import run_crawler
+from run_housekeeping import run_housekeeping
 
 app = Flask(__name__)
 
@@ -64,8 +67,18 @@ def get_jobs():
     
     return json.dumps(paged_result, default=date_handler)
 
+@app.route('/admin/run_crawler', methods=['GET'])
+def re_run_crawler():
+    os.system('python run_crawler.py')
+    return redirect(url_for('index'))
+
+@app.route('/admin/run_housekeeping', methods=['GET'])
+def re_run_housekeeping():
+    run_housekeeping()
+    return redirect(url_for('index'))
+
 def date_handler(obj):
     return obj.isoformat() if hasattr(obj, 'isoformat') else obj
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=config.WEB_HTTP_PORT, debug=True)
+    app.run(host='0.0.0.0', port=config.WEB_HTTP_PORT, debug=config.WEB_DEBUG_ENABLED)
