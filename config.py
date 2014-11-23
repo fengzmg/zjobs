@@ -3,7 +3,7 @@ import os
 APP_HOME = '/apps/jobcrawler'
 #DB_FILE = APP_HOME + '/db/jobcrawler.db'
 DB_HOST = os.environ.get('DB_HOST', 'localhost')
-DATABASE = os.environ.get('DB_DATABASE', 'zjobs')
+DATABASE = os.environ.get('DATABASE', 'zjobs')
 DB_USER = os.environ.get('DB_USER', 'zjobs')
 DB_PASSWORD = os.environ.get('DB_PASSWORD', 'zjobs')
 
