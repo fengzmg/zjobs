@@ -112,8 +112,8 @@ class ItemSaveToDBPipeline(object):
 
             conn.commit()
             conn.close()
-        except Exception as err:
-          traceback.print_exc()
+        except:
+          #traceback.print_exc()
           raise DropItem('Job is duplicate.')
 
         return item

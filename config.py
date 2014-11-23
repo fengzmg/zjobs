@@ -9,7 +9,7 @@ DB_PASSWORD = os.environ.get('DB_PASSWORD', 'zjobs')
 
 SEND_EMAIL_ENABLED = False
 IS_CLEAN_INSTALL = True  # used in create_db.py 
-REFRESH_DB_ENABLED = True
+REFRESH_DB_ENABLED = False
 
 TO_ADDRS = ['mengfeng0904@gmail.com', 'cathytheone@live.cn']
 FROM_ADDR = 'zorg.groups@gmail.com'
