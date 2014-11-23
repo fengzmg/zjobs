@@ -9,8 +9,10 @@ import re
 import datetime
 from scrapy.exceptions import DropItem
 from scrapy import log
-import sqlite3
+# import sqlite3 as dbi # uncomment if using sqlite3
+import pg8000 as dbi
 import config
+import traceback
 
 
 class ItemPrintingPipeline(object):
@@ -61,27 +63,39 @@ class ItemPostedByAgentPipeline(object):
         else:
             raise DropItem('Job is posted by Agent. Removing...')
 
-
-# class ItemSaveToMongoDBPipeline(object):
-#
-#     def process_item(self, item, spider):
-#         client = MongoClient()
-#         db = client.job_crawler_db
-#         item_dict = dict((key, value) for key, value in item.iteritems())
-#         db.crawled_jobs.insert(item_dict)
-#         return item
-
-class ItemSaveToSQLiteDBPipeline(object):
+class ItemSaveToDBPipeline(object):
     def process_item(self, item, spider):
         try:
-            conn = sqlite3.connect(config.DB_FILE)
+            #conn = dbi.connect(config.DB_FILE)
+            conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
             c = conn.cursor()
+            # c.execute('INSERT INTO CRAWLED_JOBS '
+            #           '('
+            #           'job_title, job_desc, job_details_link, job_location, job_country,'
+            #           'salary, employer_name, publish_date, contact, source, crawled_date'
+            #           ') '
+            #           'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+            #           (
+            #               item.get('job_title', None),
+            #               item.get('job_desc', None),
+            #               item.get('job_details_link', None),
+            #               item.get('job_location', None),
+            #               item.get('job_country', None),
+            #               item.get('salary', None),
+            #               item.get('employer_name', None),
+            #               item.get('publish_date', None),
+            #               item.get('contact', None),
+            #               spider.name,
+            #               datetime.datetime.now()
+
+            #           ))
+
             c.execute('INSERT INTO CRAWLED_JOBS '
                       '('
                       'job_title, job_desc, job_details_link, job_location, job_country,'
                       'salary, employer_name, publish_date, contact, source, crawled_date'
                       ') '
-                      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+                      'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, current_date);',
                       (
                           item.get('job_title', None),
                           item.get('job_desc', None),
@@ -92,14 +106,14 @@ class ItemSaveToSQLiteDBPipeline(object):
                           item.get('employer_name', None),
                           item.get('publish_date', None),
                           item.get('contact', None),
-                          spider.name,
-                          datetime.datetime.now()
+                          spider.name
 
                       ))
 
             conn.commit()
             conn.close()
-        except sqlite3.IntegrityError:
-            raise DropItem('Job is duplicate.')
+        except Exception as err:
+          traceback.print_exc()
+          raise DropItem('Job is duplicate.')
 
         return item

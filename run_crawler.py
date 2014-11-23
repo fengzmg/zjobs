@@ -20,8 +20,8 @@ from scrapy.utils.project import get_project_settings
 from scrapy import log, signals
 from twisted.internet import reactor
 import smtplib
-import sqlite3
-
+# import sqlite3 as dbi
+import pg8000 as dbi
 
 def setup_crawler(spider_types):
     assert type(spider_types) is list
@@ -81,7 +81,8 @@ def stop_reactor():
     reactor.stop() if stop_reactor.spider_closed_count == stop_reactor.spider_count else None
 
 def refresh_database():
-    conn = sqlite3.connect(config.DB_FILE)
+    #conn = dbi.connect(config.DB_FILE)
+    conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
     c = conn.cursor()
     c.execute('DELETE FROM CRAWLED_JOBS')
     conn.commit()

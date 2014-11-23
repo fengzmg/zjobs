@@ -23,8 +23,7 @@ ITEM_PIPELINES = {
     'jobcrawler.pipelines.ItemRecuritValidationPipeline': 1,
     'jobcrawler.pipelines.ItemPostedByAgentPipeline': 2,
     'jobcrawler.pipelines.ItemPrintingPipeline': 3,
-    # 'jobcrawler.pipelines.ItemDuplicationCheckPipeline': 1,
-    'jobcrawler.pipelines.ItemSaveToSQLiteDBPipeline': 4
+    'jobcrawler.pipelines.ItemSaveToDBPipeline': 4
 }
 
 LOG_LEVEL = 'INFO'

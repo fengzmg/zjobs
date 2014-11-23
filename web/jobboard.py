@@ -1,19 +1,20 @@
 from flask import Flask
 from flask.templating import render_template
 from flask import g, request
-import sqlite3
+#import sqlite3 as dbi
+import pg8000 as dbi
 import config
 import json
 
 app = Flask(__name__)
 
 def connect_db():
-    return sqlite3.connect(config.DB_FILE)
-
+    #return dbi.connect(config.DB_FILE)
+    return dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
 @app.before_request
 def before_request():
     g.db_conn = connect_db()
-    g.db_conn.row_factory = sqlite3.Row
+    #g.db_conn.row_factory = sqlite3.Row
 
 @app.teardown_request
 def teardown_request(exception):
@@ -40,17 +41,31 @@ def get_jobs():
     page_no = int(page_request.get('page_no', 1))
 
     c = g.db_conn.cursor()
-    rows = c.execute('SELECT * FROM ( \
-            SELECT * FROM CRAWLED_JOBS ORDER BY publish_date DESC \
-        ) LIMIT ? OFFSET ?  ', (page_size, page_size*(page_no-1) ) )
+    # rows = c.execute('SELECT * FROM ( \
+    #         SELECT * FROM CRAWLED_JOBS ORDER BY publish_date DESC \
+    #     ) AS RESULT LIMIT ? OFFSET ?  ', (page_size, page_size*(page_no-1) ) )
 
-    paged_result['content'] = [dict(item) for item in rows]
+    property_names = ['job_title', 'job_desc', 'job_details_link', 'job_location', 'job_country',
+                      'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
     
-    paged_result['total_count'] = c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS').fetchone()[0]
+    c.execute('SELECT * FROM ( \
+            SELECT ' + ','.join(property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC \
+        ) AS RESULT LIMIT %s OFFSET %s  ', (page_size, page_size*(page_no-1) ) )
+
+    rows = c.fetchall()
+
+    paged_result['content'] = [dict(zip(property_names, row)) for row in rows]
+
+    c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS')
+
+    paged_result['total_count'] = c.fetchone()[0]
     
     paged_result['total_pages'] = paged_result['total_count'] / page_size + 1 if paged_result['total_count'] % page_size != 0 else  paged_result['total_count'] / page_size
     
-    return json.dumps(paged_result)
+    return json.dumps(paged_result, default=date_handler)
+
+def date_handler(obj):
+    return obj.isoformat() if hasattr(obj, 'isoformat') else obj
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=config.WEB_HTTP_PORT, debug=True)
