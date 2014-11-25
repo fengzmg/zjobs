@@ -7,8 +7,10 @@ import pg8000 as dbi
 import config
 import json
 import os
+import xlsxwriter
 import unicodecsv
 import tempfile
+import datetime
 
 from run_housekeeping import run_housekeeping
 
@@ -73,20 +75,45 @@ def get_jobs():
 
 @app.route('/extract/csv')
 def extract_to_csv():
-    tmp_file = (tempfile.NamedTemporaryFile()).name
-    #tmp_file = '/apps/jobcrawler/extract.csv'
+    tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix='.csv', delete=False)).name
     c = g.db_conn.cursor()
     c.execute('SELECT ' + ','.join(property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
     rows = c.fetchall()
 
     with open(tmp_file, 'w') as f:
         writer = unicodecsv.writer(f, encoding='utf-8')
-        writer.writerow(property_names)
+        writer.writerow([property_name.upper() for property_name in property_names])
         for row in rows:
             writer.writerow(row)
         response = make_response(open(tmp_file, 'rb').read())
-        response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs.csv"
+        response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs_%s.csv" % datetime.datetime.now().strftime('%Y-%m-%d')
     
+    os.remove(tmp_file)
+    return response
+
+@app.route('/extract/xlsx')
+def extract_to_xlsx():
+    tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix='.xlsx', delete=False)).name
+
+    c = g.db_conn.cursor()
+    c.execute('SELECT ' + ','.join(property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
+    rows = c.fetchall()
+
+
+    workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format':'yyyy-mm-dd'})
+    worksheet = workbook.add_worksheet('crawled_jobs')
+    worksheet.set_column('A:M', 40)
+
+    worksheet.write_row(0, 0, [property_name.upper() for property_name in property_names])
+
+    for rowIdx, row in enumerate(rows):
+        worksheet.write_row(rowIdx+1, 0, row)
+    
+    workbook.close()
+
+    response = make_response(open(tmp_file, 'rb').read())
+    response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs_%s.xlsx" % datetime.datetime.now().strftime('%Y-%m-%d')
+    os.remove(tmp_file)
     return response
 
 

@@ -5,6 +5,7 @@ MarkupSafe==0.23
 Scrapy==0.24.4
 Twisted==14.0.0
 Werkzeug==0.9.6
+XlsxWriter==0.6.4
 argparse==1.2.1
 cffi==0.8.6
 cryptography==0.6.1

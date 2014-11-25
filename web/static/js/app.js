@@ -10,8 +10,8 @@ angular.module('myApp', [
     $routeProvider.otherwise({redirectTo: '/home'});
 }])
 .config(function($interpolateProvider) {
-  $interpolateProvider.startSymbol('[[');
-  $interpolateProvider.endSymbol(']]');
+    $interpolateProvider.startSymbol('[[');
+    $interpolateProvider.endSymbol(']]');
 })
 .directive('tooltip', function(){
     return {

@@ -1,6 +1,5 @@
 from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
 from apscheduler.triggers.cron import CronTrigger
-from run_crawler import run_crawler
 from run_web import run_web
 from run_housekeeping import run_housekeeping
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -18,7 +17,7 @@ def start_scheduler():
         'max_instances': 3
     }
     scheduler = BackgroundScheduler(executors=executors, job_defaults=job_defaults)
-    crawler_trigger = CronTrigger(hour='11', minute='30')
+    crawler_trigger = CronTrigger(hour='*/12')
     #crawler_trigger = CronTrigger(minute='*/05')
     hourse_keeping_trigger = CronTrigger(hour='12', minute='30')
 
