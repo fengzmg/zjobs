@@ -26,6 +26,7 @@
         </tbody>
     </table>
     <div class="text-center">
+
         <ul class="pagination">
             
              <span ng-click="toPreviousPage()" class="glyphicon glyphicon-backward pagination_btn">
@@ -42,6 +43,7 @@
                 <select class="form-control" id="page_size_box" ng-model="page_request.size" ng-options="page_size for page_size in page_size_options">
                 </select>
             </span>
+            <div loadingindicator></div>
         </ul>
     </div>
 

@@ -117,7 +117,6 @@ def extract_to_xlsx():
     return response
 
 
-
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():
     os.system('python run_crawler.py')

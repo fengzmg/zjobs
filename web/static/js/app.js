@@ -13,6 +13,27 @@ angular.module('myApp', [
     $interpolateProvider.startSymbol('[[');
     $interpolateProvider.endSymbol(']]');
 })
+.config(function($httpProvider) {
+    $httpProvider.interceptors.push(function($q, $rootScope, $timeout) {
+        return {
+            'request': function(config) {
+                $timeout(function(){
+                    $rootScope.$broadcast('loading:started', '');
+                }, 30);
+                
+                return config || $q.when(config);
+            },
+            'response': function(response) {
+
+                $timeout(function(){
+                    $rootScope.$broadcast('loading:completed', '');
+                },  30);
+                
+                return response || $q.when(response);
+            }
+        };
+    });
+})
 .directive('tooltip', function(){
     return {
         restrict: 'A',
@@ -31,6 +52,23 @@ angular.module('myApp', [
 
             }
         }
+    };
+})
+.directive("loadingindicator", function($rootScope) {
+    return {
+        replace: true,
+        controller : function($rootScope) {
+            $rootScope.$on("loading:started", function(e, data) {   
+                $("#loader").show();
+            });
+
+            $rootScope.$on("loading:completed", function(e, data) {
+                $("#loader").hide();
+            });
+
+        },
+
+        template: '<img id="loader" src="/static/image/ajax-loader.gif" style="display: none"/>'
     };
 })
 .controller('homeController', ['$scope','$http', function($scope, $http) {
