@@ -2,4 +2,4 @@
 loglevel = 'info'
 errorlog = '-'
 accesslog = '-'
-workers = 4
+workers = 8
