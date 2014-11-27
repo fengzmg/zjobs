@@ -1,7 +1,15 @@
+body{
+	background-color: #EFFBF5;
+}
+
+.page-header{
+	border-bottom: 1px solid #6E6E6E;
+}
 /*Overwrite the default font size used in bootstrap for tooltip*/
 .tooltip{
 	font-size: 14px;
 }
+
 
 .table-toolbar{
 	text-align: right;

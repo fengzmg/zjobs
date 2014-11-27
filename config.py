@@ -24,5 +24,7 @@ AGENT_RULE_OUT_PATTERN = u'中介|签证|经纪|劳务|补习|服务|房|[交|�
 WEB_HTTP_PORT = int(os.environ.get('PORT', 33507))
 WEB_DEBUG_ENABLED = True
 
-HOUSEKEEPING_RECORD_ORDLER_THAN = '7 days'
+HOUSEKEEPING_RECORD_ORDLER_THAN = 14
 EXPORT_TO_FILE_ENABLED = False
+
+APP_HEARTBEAT_URL = 'https://zjobs.herokuapp.com/'

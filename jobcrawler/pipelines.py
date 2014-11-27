@@ -11,22 +11,12 @@ from scrapy import log
 # import sqlite3 as dbi # uncomment if using sqlite3
 import pg8000 as dbi
 import config
+import datetime
 #import traceback
 
 
 class ItemPrintingPipeline(object):
     def process_item(self, item, spider):
-        # print '-' * 20
-        # print 'Employer Name: ', item.get('employer_name', '--')
-        # print 'Job Location: ', item.get('job_location', '--')
-        # print 'Job Title: ', item.get('job_title', '--')
-        # print 'Salary :', item.get('salary', '--')
-        # print 'Job Details Page: ', item.get('job_details_link', '--')
-        # print 'Contact: ', item.get('contact', '--')
-        # print 'Publish Date: ', item.get('publish_date', '--')
-        # print 'Job Description: \n', item.get('job_desc', '--')
-        # print '-' * 20
-
         log.msg('[%s] Job Title: %s' % (spider.name, item.get('job_title', '--')))
         return item
 
@@ -61,6 +51,19 @@ class ItemPostedByAgentPipeline(object):
             return item
         else:
             raise DropItem('Job is posted by Agent. Removing...')
+
+class ItemPublishDateFilterPipeline(object):
+    def process_item(self, item, spider):
+        publish_date = item.get('publish_date', None)
+        if publish_date is None:
+            raise DropItem('Job has no publish_date...')
+
+        #log.msg('Time Delta:' + str((datetime.datetime.now() - publish_date).days))
+        
+        if (datetime.datetime.now() - publish_date).days > int(config.HOUSEKEEPING_RECORD_ORDLER_THAN):
+            raise DropItem('Job is published order than %s days' % str(config.HOUSEKEEPING_RECORD_ORDLER_THAN))
+        
+        return item
 
 class ItemSaveToDBPipeline(object):
     def process_item(self, item, spider):
