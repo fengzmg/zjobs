@@ -12,7 +12,7 @@ import unicodecsv
 import tempfile
 import datetime
 
-from run_housekeeping import run_housekeeping
+from run import run_housekeeper, run_crawler
 
 app = Flask(__name__)
 
@@ -119,12 +119,12 @@ def extract_to_xlsx():
 
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():
-    os.system('python run_crawler.py')
+    run_crawler()
     return redirect(url_for('index'))
 
-@app.route('/admin/run_housekeeping', methods=['GET'])
+@app.route('/admin/run_housekeeper', methods=['GET'])
 def re_run_housekeeping():
-    run_housekeeping()
+    run_housekeeper()
     return redirect(url_for('index'))
 
 def date_handler(obj):

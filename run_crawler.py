@@ -3,7 +3,6 @@ import os
 from os.path import dirname, realpath
 import sys
 
-
 sys.path.append(dirname(realpath(__file__)))
 
 from scrapy.xlib.pydispatch import dispatcher
