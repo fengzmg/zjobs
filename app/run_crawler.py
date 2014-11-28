@@ -3,10 +3,11 @@ import os
 from os.path import dirname, realpath
 import sys
 
-sys.path.append(dirname(realpath(__file__)))
+app_home_dir = dirname(dirname(realpath(__file__)))
+sys.path.append(app_home_dir)  ### setup sys path to use the current app modules
 
 from scrapy.xlib.pydispatch import dispatcher
-import config
+import app.config as config
 from jobcrawler.spiders.sgxin import SgxinSpider
 
 from jobcrawler.spiders.shichengbbs import ShichengBBSSpider

@@ -10,7 +10,7 @@ from scrapy.exceptions import DropItem
 from scrapy import log
 # import sqlite3 as dbi # uncomment if using sqlite3
 import pg8000 as dbi
-import config
+import app.config as config
 import datetime
 #import traceback
 

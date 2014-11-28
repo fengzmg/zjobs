@@ -7,7 +7,7 @@
 #
 # http://doc.scrapy.org/en/latest/topics/settings.html
 #
-import config
+import app.config as config
 
 BOT_NAME = 'jobcrawler'
 

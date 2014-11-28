@@ -3,9 +3,10 @@ import os
 from os.path import dirname, realpath
 import sys
 
-sys.path.append(dirname(realpath(__file__)))  ### setup sys path to use the current app modules
+app_home_dir = dirname(dirname(realpath(__file__)))
+sys.path.append(app_home_dir)  ### setup sys path to use the current app modules
 
-import config
+import app.config as config
 import logging
 import pg8000 as dbi
 
@@ -23,12 +24,12 @@ logger.addHandler(ch)
 
 def run_crawler():
     logger.info('start running crawler..')
-    os.system('python run_crawler.py')
+    os.system('python '+ app_home_dir +'/app/run_crawler.py')
     logger.info('done running crawler..')
 
 def run_web():
     logger.info('starting web..')
-    os.system('gunicorn -c gunicorn.conf.py web.jobboard:app --debug')
+    os.system('cd '+ app_home_dir +' && gunicorn -c app/gunicorn.conf.py web.jobboard:app --debug')
 
 def run_flask_web():
     import web.jobboard

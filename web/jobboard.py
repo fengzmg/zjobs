@@ -4,7 +4,7 @@ from flask.templating import render_template
 from flask import g, request
 #import sqlite3 as dbi
 import pg8000 as dbi
-import config
+import app.config as config
 import json
 import os
 import xlsxwriter
@@ -12,7 +12,7 @@ import unicodecsv
 import tempfile
 import datetime
 
-from run import run_housekeeper, run_crawler
+from app.run import run_housekeeper, run_crawler
 
 app = Flask(__name__)
 

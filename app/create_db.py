@@ -1,6 +1,6 @@
 #import sqlite3  #uncomment this when using sqlite3
 import pg8000  as dbi# comment this when using sqlite3
-import config
+import app.config as config
 
 #conn = sqlite3.connect(config.DB_FILE)
 conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
