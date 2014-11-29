@@ -95,7 +95,9 @@ def parse_process_args():
     parser.add_argument('-c', '--component', type=str,  help='app component to run. [all|web|flask_web|scheduler|crawler|housekeeper|heartbeater]')
     args = parser.parse_args()
 
-    if args.component == 'all':
+    if args.component is None:
+        run_app()
+    elif args.component == 'all':
         run_app()
     elif args.component == 'scheduler':
         run_scheduler()
