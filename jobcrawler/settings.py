@@ -23,9 +23,10 @@ ITEM_PIPELINES = {
 
     'jobcrawler.pipelines.ItemRecuritValidationPipeline': 1,
     'jobcrawler.pipelines.ItemPostedByAgentPipeline': 2,
-    'jobcrawler.pipelines.ItemPrintingPipeline': 3,
-    'jobcrawler.pipelines.ItemPublishDateFilterPipeline': 4,
-    'jobcrawler.pipelines.ItemSaveToDBPipeline': 5
+    'jobcrawler.pipelines.ItemDuplicationCheckPipeline': 3,
+    'jobcrawler.pipelines.ItemPrintingPipeline': 4,
+    'jobcrawler.pipelines.ItemPublishDateFilterPipeline': 5,
+    'jobcrawler.pipelines.ItemSaveToDBPipeline': 6
 }
 
 LOG_LEVEL = 'INFO'

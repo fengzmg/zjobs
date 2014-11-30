@@ -22,6 +22,67 @@ ch.setFormatter(formatter)
 # add the handlers to the logger
 logger.addHandler(ch)
 
+def create_db():
+    #conn = sqlite3.connect(config.DB_FILE)
+    conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+    #conn = dbi.connect('postgres://zjobs:zjobs@localhost:5432/zjobs')
+    try:
+        c = conn.cursor()
+
+        c.execute('DROP TABLE IF EXISTS CRAWLED_JOBS')
+        c.execute('DROP INDEX IF EXISTS job_title_idx')
+
+        logger.info("dropped related tables and indexes")
+
+        # c.execute('''
+        #     CREATE TABLE IF NOT EXISTS CRAWLED_JOBS(
+        #         source            text,
+        #         crawled_date      timestamp,
+        #         publish_date      timestamp,
+        #         job_title         text,
+        #         job_desc          text,
+        #         job_details_link  text,
+        #         job_location      text,
+        #         job_country       text,
+        #         salary            text,
+        #         employer_name     text,
+        #         contact           text
+        #     );
+        # ''')
+
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS CRAWLED_JOBS(
+                source            text,
+                crawled_date      date,
+                publish_date      date,
+                job_title         text,
+                job_desc          text,
+                job_details_link  text,
+                job_location      text,
+                job_country       text,
+                salary            text,
+                employer_name     text,
+                contact           text
+            );
+            ''')
+
+        logger.info("created related tables")
+
+        c.execute('''
+            CREATE UNIQUE INDEX job_title_idx ON CRAWLED_JOBS(job_title)
+        ''')
+
+        logger.info("created related indexes")
+
+        conn.commit()
+        logger.info('done create database')
+    except:
+        conn.rollback()
+        logger.error('Unable to run create_db')
+    finally:
+        conn.close()
+    
+
 def run_crawler():
     logger.info('start running crawler..')
     os.system('python '+ app_home_dir +'/app/run_crawler.py')
@@ -47,10 +108,15 @@ def run_housekeeper():
     
     def remove_old_records():
         conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
-        c = conn.cursor()
-        c.execute("DELETE FROM CRAWLED_JOBS WHERE publish_date < NOW() - INTERVAL '" + str(config.HOUSEKEEPING_RECORD_ORDLER_THAN) +" days'")
-        conn.commit()
-        conn.close()
+        try:
+            c = conn.cursor()
+            c.execute("DELETE FROM CRAWLED_JOBS WHERE publish_date < NOW() - INTERVAL '" + str(config.HOUSEKEEPING_RECORD_ORDLER_THAN) +" days'")
+            conn.commit()
+        except:
+            conn.rollback()
+            logger.error('Unable to run the housekeeper')
+        finally:
+            conn.close()
 
     logger.info('start running housekeeper..')
     remove_old_records()
@@ -111,11 +177,11 @@ def parse_process_args():
         run_web()
     elif args.component == 'flask_web':
         run_flask_web()
-
+    elif args.component == 'create_db':
+        create_db()
     else:
         print 'Invalid Usage: '
         parser.print_help()
 
 if __name__ == '__main__':
-
     parse_process_args()

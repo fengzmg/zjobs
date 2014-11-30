@@ -3,7 +3,7 @@
 
 // Declare app level module which depends on filters, and services
 angular.module('myApp', [
-  'ngRoute'
+  'ngRoute', 'ngSanitize'
 ])
 .config(['$routeProvider', function($routeProvider) {
     $routeProvider.when('/home', {templateUrl: '/home.html', controller: 'homeController'});
@@ -33,6 +33,20 @@ angular.module('myApp', [
             }
         };
     });
+})
+.filter('displayAsIcon', ['$sce',function($sce) {
+    var site_urls = {
+    'sgxin':'http://www.sgxin.com',
+    'shichengbbs':'http://www.shichengbbs.com'
+    }
+  return function(source) {
+    return $sce.trustAsHtml('<a href="'+ site_urls[source] +'" target="_blank"><img class="siteImage"  src="/static/image/'+source+'_logo.png"/></a>');
+  };
+}])
+.filter('siteImageUrl', function() {
+  return function(source) {
+    return '/static/image/'+source+'_logo.png';
+  };
 })
 .directive('tooltip', function(){
     return {
@@ -106,7 +120,6 @@ angular.module('myApp', [
             if($scope.page_request.page_no < $scope.paged_result.total_pages){
                 $scope.page_request.page_no = $scope.page_request.page_no + 1;       
             }
-            
         }
 
         //setup the watch function for the pagination

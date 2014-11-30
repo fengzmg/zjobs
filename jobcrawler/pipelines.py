@@ -21,17 +21,19 @@ class ItemPrintingPipeline(object):
         return item
 
 
-# class ItemDuplicationCheckPipeline(object):
-#     def process_item(self, item, spider):
-#         job_title = item.get('job_title')
-#         job_details_link = item.get('job_details_link')
-#         if job_title is not None and job_details_link is not None:
-#             job_item_count = db.crawled_jobs.find({"job_details_link": job_details_link}).count()
-#
-#             if job_item_count == 0:
-#                 return item
-#
-#         raise DropItem('Duplicated Job title: %s' % job_title)
+class ItemDuplicationCheckPipeline(object):
+    def process_item(self, item, spider):
+        job_title = item.get('job_title', None)
+        if job_title:
+            conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+            c = conn.cursor()
+            c.execute("SELECT COUNT(*) FROM CRAWLED_JOBS WHERE job_title='%s'" % job_title)
+            job_item_count = int(c.fetchone()[0])
+            
+            if job_item_count == 0:
+                return item
+
+        raise DropItem('Duplicated Job title: %s' % job_title)
 
 class ItemRecuritValidationPipeline(object):
     def process_item(self, item, spider):
@@ -67,9 +69,9 @@ class ItemPublishDateFilterPipeline(object):
 
 class ItemSaveToDBPipeline(object):
     def process_item(self, item, spider):
+        #conn = dbi.connect(config.DB_FILE)
+        conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
         try:
-            #conn = dbi.connect(config.DB_FILE)
-            conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
             c = conn.cursor()
             # c.execute('INSERT INTO CRAWLED_JOBS '
             #           '('
@@ -113,9 +115,11 @@ class ItemSaveToDBPipeline(object):
                       ))
 
             conn.commit()
-            conn.close()
         except:
-          #traceback.print_exc()
-          raise DropItem('Job is duplicate.')
+            conn.rollack()
+            log.msg('Unable to save the job: %s' % item.get('job_title', '--'))
+            raise DropItem('Unable to save the job')
+        finally:
+            conn.close()
 
         return item
