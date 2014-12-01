@@ -8,10 +8,9 @@ import re
 # from pymongo import MongoClient
 from scrapy.exceptions import DropItem
 from scrapy import log
-# import sqlite3 as dbi # uncomment if using sqlite3
-import pg8000 as dbi
 import app.config as config
 import datetime
+from jobcrawler.items import JobItem
 #import traceback
 
 
@@ -22,18 +21,12 @@ class ItemPrintingPipeline(object):
 
 
 class ItemDuplicationCheckPipeline(object):
-    def process_item(self, item, spider):
-        job_title = item.get('job_title', None)
-        if job_title:
-            conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
-            c = conn.cursor()
-            c.execute("SELECT COUNT(*) FROM CRAWLED_JOBS WHERE job_title='%s'" % job_title)
-            job_item_count = int(c.fetchone()[0])
-            
-            if job_item_count == 0:
-                return item
-
-        raise DropItem('Duplicated Job title: %s' % job_title)
+    def process_item(self, item, spider):        
+        if JobItem.is_exists(item):
+            job_title = item.get('job_title', None)
+            raise DropItem('Duplicated Job title. Removing...')
+        else:
+            return item         
 
 class ItemRecuritValidationPipeline(object):
     def process_item(self, item, spider):
@@ -59,67 +52,16 @@ class ItemPublishDateFilterPipeline(object):
         publish_date = item.get('publish_date', None)
         if publish_date is None:
             raise DropItem('Job has no publish_date...')
-
-        #log.msg('Time Delta:' + str((datetime.datetime.now() - publish_date).days))
         
         if (datetime.datetime.now() - publish_date).days > int(config.HOUSEKEEPING_RECORD_ORDLER_THAN):
-            raise DropItem('Job is published order than %s days' % str(config.HOUSEKEEPING_RECORD_ORDLER_THAN))
+            raise DropItem('Job is published order than %s days. Removing...' % str(config.HOUSEKEEPING_RECORD_ORDLER_THAN))
         
         return item
 
 class ItemSaveToDBPipeline(object):
     def process_item(self, item, spider):
-        #conn = dbi.connect(config.DB_FILE)
-        conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
         try:
-            c = conn.cursor()
-            # c.execute('INSERT INTO CRAWLED_JOBS '
-            #           '('
-            #           'job_title, job_desc, job_details_link, job_location, job_country,'
-            #           'salary, employer_name, publish_date, contact, source, crawled_date'
-            #           ') '
-            #           'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-            #           (
-            #               item.get('job_title', None),
-            #               item.get('job_desc', None),
-            #               item.get('job_details_link', None),
-            #               item.get('job_location', None),
-            #               item.get('job_country', None),
-            #               item.get('salary', None),
-            #               item.get('employer_name', None),
-            #               item.get('publish_date', None),
-            #               item.get('contact', None),
-            #               spider.name,
-            #               datetime.datetime.now()
-
-            #           ))
-
-            c.execute('INSERT INTO CRAWLED_JOBS '
-                      '('
-                      'job_title, job_desc, job_details_link, job_location, job_country,'
-                      'salary, employer_name, publish_date, contact, source, crawled_date'
-                      ') '
-                      'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, current_date);',
-                      (
-                          item.get('job_title', None),
-                          item.get('job_desc', None),
-                          item.get('job_details_link', None),
-                          item.get('job_location', None),
-                          item.get('job_country', None),
-                          item.get('salary', None),
-                          item.get('employer_name', None),
-                          item.get('publish_date', None),
-                          item.get('contact', None),
-                          spider.name
-
-                      ))
-
-            conn.commit()
+            JobItem.save(item)
         except:
-            conn.rollack()
-            log.msg('Unable to save the job: %s' % item.get('job_title', '--'))
-            raise DropItem('Unable to save the job')
-        finally:
-            conn.close()
-
+            raise DropItem('Unable to save the job: %s' % item.get('job_title', '--'))
         return item

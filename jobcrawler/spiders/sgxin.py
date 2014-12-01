@@ -62,6 +62,9 @@ class SgxinSpider(CrawlSpider):
 
         self.populate_job_country(detail_item, job_crawler_item)
 
+        job_crawler_item['source'] = self.name
+        job_crawler_item['crawled_date'] = datetime.datetime.now()
+
 
     def populate_job_title(self, detail_item, job_crawler_item):
 

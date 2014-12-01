@@ -7,20 +7,9 @@ app_home_dir = dirname(dirname(realpath(__file__)))
 sys.path.append(app_home_dir)  ### setup sys path to use the current app modules
 
 import app.config as config
-import logging
 import pg8000 as dbi
-
-logger = logging.getLogger('zjobs.backend')
-logger.setLevel(logging.INFO)
-
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s')
-ch.setFormatter(formatter)
-# add the handlers to the logger
-logger.addHandler(ch)
+from app.config import logger
+from jobcrawler.items import JobItem
 
 def create_db():
     #conn = sqlite3.connect(config.DB_FILE)
@@ -105,21 +94,9 @@ def run_heartbeater():
     logger.info('scheduler done hearting beating')
 
 def run_housekeeper():
-    
-    def remove_old_records():
-        conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
-        try:
-            c = conn.cursor()
-            c.execute("DELETE FROM CRAWLED_JOBS WHERE publish_date < NOW() - INTERVAL '" + str(config.HOUSEKEEPING_RECORD_ORDLER_THAN) +" days'")
-            conn.commit()
-        except:
-            conn.rollback()
-            logger.error('Unable to run the housekeeper')
-        finally:
-            conn.close()
 
     logger.info('start running housekeeper..')
-    remove_old_records()
+    JobItem.remove_old_records(retention_days=config.HOUSEKEEPING_RECORD_ORDLER_THAN)
     logger.info('done running housekeeper..')
 
 

@@ -2,8 +2,6 @@
 from flask import Flask, redirect, url_for, make_response
 from flask.templating import render_template
 from flask import g, request
-#import sqlite3 as dbi
-import pg8000 as dbi
 import app.config as config
 import json
 import os
@@ -14,25 +12,18 @@ import datetime
 
 from app.run import run_housekeeper, run_crawler
 
+from jobcrawler.items import JobItem
+
+
 app = Flask(__name__)
-
-property_names = ['job_title', 'job_desc', 'job_details_link', 'job_location', 'job_country',
-                      'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
-
-def connect_db():
-    #return dbi.connect(config.DB_FILE)
-    return dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
 
 @app.before_request
 def before_request():
-    g.db_conn = connect_db()
-    #g.db_conn.row_factory = sqlite3.Row
+    pass
 
 @app.teardown_request
 def teardown_request(exception):
-    db_conn = getattr(g, 'db_conn', None)
-    if db_conn is not None:
-        db_conn.close()
+    pass
 
 @app.route('/')
 def index():
@@ -49,36 +40,23 @@ def get_jobs():
     paged_result = {}
     paged_result['page_request'] = page_request
 
-    page_size = int(page_request.get('size',20)) # convert the string to int
+    size = int(page_request.get('size',25)) # convert the string to int
     page_no = int(page_request.get('page_no', 1))
 
-    c = g.db_conn.cursor()
-    # rows = c.execute('SELECT * FROM ( \
-    #         SELECT * FROM CRAWLED_JOBS ORDER BY publish_date DESC \
-    #     ) AS RESULT LIMIT ? OFFSET ?  ', (page_size, page_size*(page_no-1) ) )
+    property_names, results = JobItem.find_with_pagination({'page_no':page_no, 'size':size})
 
-    c.execute('SELECT * FROM ( \
-            SELECT ' + ','.join(property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC \
-        ) AS RESULT LIMIT %s OFFSET %s  ', (page_size, page_size*(page_no-1) ) )
+    paged_result['content'] = [dict(zip(property_names, row)) for row in results]
 
-    rows = c.fetchall()
-
-    paged_result['content'] = [dict(zip(property_names, row)) for row in rows]
-
-    c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS')
-
-    paged_result['total_count'] = c.fetchone()[0]
+    paged_result['total_count'] = JobItem.count()
     
-    paged_result['total_pages'] = paged_result['total_count'] / page_size + 1 if paged_result['total_count'] % page_size != 0 else  paged_result['total_count'] / page_size
+    paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] / size != 0 else  paged_result['total_count'] / size
     
     return json.dumps(paged_result, default=date_handler)
 
 @app.route('/extract/csv')
 def extract_to_csv():
     tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix='.csv', delete=False)).name
-    c = g.db_conn.cursor()
-    c.execute('SELECT ' + ','.join(property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
-    rows = c.fetchall()
+    property_names, rows = JobItem.findall()
 
     with open(tmp_file, 'w') as f:
         writer = unicodecsv.writer(f, encoding='utf-8')
@@ -93,13 +71,10 @@ def extract_to_csv():
 
 @app.route('/extract/xlsx')
 def extract_to_xlsx():
-    tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix='.xlsx', delete=False)).name
-
-    c = g.db_conn.cursor()
-    c.execute('SELECT ' + ','.join(property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
-    rows = c.fetchall()
-
-
+    tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix='.xlsx', delete=False)).name  
+    
+    property_names, rows = JobItem.findall()
+    
     workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format':'yyyy-mm-dd'})
     worksheet = workbook.add_worksheet('crawled_jobs')
     worksheet.set_column('A:M', 40)

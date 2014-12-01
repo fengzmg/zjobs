@@ -49,6 +49,8 @@ class ShichengBBSSpider(CrawlSpider):
             job_crawler_item['job_country'] = 'Singapore'
             job_crawler_item['job_location'] = 'Singapore'
             job_crawler_item['contact'] = detail_item.xpath('./div[2]/a/text()').extract()[0]
+            job_crawler_item['source'] = self.name
+            job_crawler_item['crawled_date'] = datetime.datetime.now()
         except:
             pass
 
