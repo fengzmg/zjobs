@@ -23,7 +23,6 @@ class ItemPrintingPipeline(object):
 class ItemDuplicationCheckPipeline(object):
     def process_item(self, item, spider):        
         if JobItem.is_exists(item):
-            job_title = item.get('job_title', None)
             raise DropItem('Duplicated Job title. Removing...')
         else:
             return item         

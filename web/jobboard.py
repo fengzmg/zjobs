@@ -4,7 +4,6 @@ from flask.templating import render_template
 from flask import g, request
 import app.config as config
 import json
-import os
 import datetime
 
 from app.run import run_housekeeper, run_crawler, run_emailer, extract_file_as_bytes
@@ -29,6 +28,10 @@ def index():
 @app.route('/<html_file_name>.html')
 def render_html(html_file_name):
     return render_template(html_file_name + '.html')
+
+@app.route('/robots.txt')
+def robots():
+    return render_template('robots.txt')
 
 @app.route('/jobs', methods=['GET','POST'])
 def get_jobs():
