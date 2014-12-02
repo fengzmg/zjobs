@@ -144,7 +144,7 @@ class JobItem(scrapy.Item):
     def findall():
         conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
         c = conn.cursor()
-        c.execute('SELECT ' + ','.join(property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
+        c.execute('SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
         return JobItem.property_names, c.fetchall()
 
     @staticmethod

@@ -2,7 +2,7 @@
 import os
 from os.path import dirname, realpath
 import sys
-
+import time
 app_home_dir = dirname(dirname(realpath(__file__)))
 sys.path.append(app_home_dir)  ### setup sys path to use the current app modules
 
@@ -10,6 +10,8 @@ import app.config as config
 import pg8000 as dbi
 from app.config import logger
 from jobcrawler.items import JobItem
+
+from multiprocessing import Pool
 
 def create_db():
     #conn = sqlite3.connect(config.DB_FILE)
@@ -71,11 +73,23 @@ def create_db():
     finally:
         conn.close()
     
+def _crawl(spider_name=None):
+        if spider_name:
+            os.system('cd %s && scrapy crawl %s' % (app_home_dir, spider_name))
+            logger.info('Done running spider %s' % spider_name)
+        return None
 
 def run_crawler():
+    start_time = time.time()
     logger.info('start running crawler..')
-    os.system('python '+ app_home_dir +'/app/run_crawler.py')
-    logger.info('done running crawler..')
+
+    # os.system('python '+ app_home_dir +'/app/run_crawler.py')
+    spider_names = ['sgxin', 'shichengbbs', 'singxin']
+    
+    pool = Pool(processes=len(spider_names))
+    pool.map(_crawl, spider_names)
+   
+    logger.info('done running crawler.. Time elapsed: %.3fs' % (time.time() - start_time))
 
 def run_web():
     logger.info('starting web..')

@@ -5,7 +5,6 @@ from scrapy.http.request import Request
 from scrapy.contrib.linkextractors import LinkExtractor
 
 from jobcrawler.items import JobItem
-import re
 
 
 class SgxinSpider(CrawlSpider):

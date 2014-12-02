@@ -9,8 +9,9 @@ sys.path.append(app_home_dir)  ### setup sys path to use the current app modules
 from scrapy.xlib.pydispatch import dispatcher
 import app.config as config
 from jobcrawler.spiders.sgxin import SgxinSpider
-
 from jobcrawler.spiders.shichengbbs import ShichengBBSSpider
+from jobcrawler.spiders.singxin import SingxinSpider
+
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -94,8 +95,8 @@ def run_crawler():
     if config.REFRESH_DB_ENABLED:
         refresh_database()
 
-    spider_names = setup_crawler(spider_types=[SgxinSpider, ShichengBBSSpider])
-    stop_reactor.spider_count = 2
+    spider_names = setup_crawler(spider_types=[SingxinSpider,ShichengBBSSpider, SgxinSpider])
+    stop_reactor.spider_count = len(spider_names)
     stop_reactor.spider_closed_count = 0
     dispatcher.connect(stop_reactor, signals.spider_closed)
     log.start()

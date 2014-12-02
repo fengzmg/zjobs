@@ -9,6 +9,19 @@
 #
 import app.config as config
 
+from scrapy import log
+from scrapy import logformatter
+
+class PoliteLogFormatter(logformatter.LogFormatter):
+    def dropped(self, item, exception, response, spider):
+        return {
+            'level': log.WARNING,
+            'format': u"Dropped: %(exception)s",
+            'exception': exception,
+            'item': None,
+        }
+
+
 BOT_NAME = 'jobcrawler'
 
 SPIDER_MODULES = ['jobcrawler.spiders']
@@ -39,5 +52,7 @@ CONCURRENT_REQUESTS = 200
 COOKIES_ENABLED = False
 DOWNLOAD_DELAY = 0
 RETRY_ENABLED = False
-DOWNLOAD_TIMEOUT = 15
+DOWNLOAD_TIMEOUT = 30
+
+LOG_FORMATTER = 'jobcrawler.settings.PoliteLogFormatter'
 

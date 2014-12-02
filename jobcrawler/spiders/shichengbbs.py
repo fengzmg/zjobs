@@ -3,9 +3,7 @@ import datetime
 from scrapy.contrib.spiders.crawl import CrawlSpider, Rule
 from scrapy.http.request import Request
 from scrapy.contrib.linkextractors import LinkExtractor
-from scrapy import log
 from jobcrawler.items import JobItem
-import re
 
 class ShichengBBSSpider(CrawlSpider):
     name = "shichengbbs"
@@ -15,7 +13,7 @@ class ShichengBBSSpider(CrawlSpider):
     )
 
     rules = (
-        Rule(LinkExtractor(allow='/category/view/id/47/page/[0-6]'), callback='parse_item', follow=True, ),
+        Rule(LinkExtractor(allow='/category/view/id/47/page/[0-3]'), callback='parse_item', follow=True, ),
     )
 
     def parse_start_url(self, response):
