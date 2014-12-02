@@ -149,7 +149,7 @@ def run_app():
 def parse_process_args():
     import argparse
     parser = argparse.ArgumentParser('run the app component')
-    parser.add_argument('-c', '--component', type=str,  help='app component to run. [all|web|flask_web|scheduler|crawler|housekeeper|heartbeater]')
+    parser.add_argument('component', nargs='?', default='all', type=str,  help='app component to run. [all|web|flask_web|scheduler|crawler|housekeeper|heartbeater]')
     args = parser.parse_args()
 
     if args.component is None:
