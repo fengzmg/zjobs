@@ -12,6 +12,8 @@ from app.config import logger
 from jobcrawler.items import JobItem
 
 from multiprocessing import Pool
+import datetime
+import time
 
 def create_db():
     #conn = sqlite3.connect(config.DB_FILE)
@@ -154,36 +156,44 @@ def run_emailer():
     from email import Encoders
     import smtplib
 
-    def send_results(spider_names):
-        smtp = smtplib.SMTP(host=config.SMTP_HOST, port=config.SMTP_PORT)
+    logger.info('start sending email to subscribers...')
+    smtp = smtplib.SMTP(host=config.SMTP_HOST, port=config.SMTP_PORT)
+
+    try:
         smtp.set_debuglevel(4)
         smtp.ehlo()
         smtp.starttls()
         smtp.ehlo()
         smtp.login(user=config.SMTP_USER, password=config.SMTP_PASSWORD)
 
+        logger.info('established secure connection to smtp server...')
+
         toaddrs = config.TO_ADDRS
         fromaddr = config.FROM_ADDR
 
-        for spider_name in spider_names:
-            message_subject = "Crawled Result From %s" % spider_name
-            message_text = "Please find the crawled result for %s" % spider_name
-            file_to_attach = config.APP_HOME + '/crawled_jobs_%s.csv' % spider_name
+        current_date_string = datetime.datetime.now().strftime('%Y-%m-%d')
+        message_subject = "%s:%s" % (config.APP_NAME, current_date_string)
+        message_text = "Thank you for subscribing %s. Please find the newly posted jobs as of %s" % (config.APP_NAME, current_date_string)
 
-            msg = MIMEMultipart()
-            msg['From'] = fromaddr
-            msg['To'] = ','.join(toaddrs)
-            msg['Subject'] = message_subject
-            msg.attach(MIMEText(message_text))
+        msg = MIMEMultipart()
+        msg['From'] = fromaddr
+        msg['To'] = ','.join(toaddrs)
+        msg['Subject'] = message_subject
+        msg.attach(MIMEText(message_text))
 
-            part = MIMEBase('application', "octet-stream")
-            part.set_payload(open(file_to_attach, "rb").read())
-            Encoders.encode_base64(part)
-            part.add_header('Content-Disposition', 'attachment; filename="%s"' % os.path.basename(file_to_attach))
-            msg.attach(part)
+        part = MIMEBase('application', "octet-stream")
+        file_format = 'xlsx'
+        part.set_payload(extract_file_as_bytes(file_format))
+        logger.info('attached extracted files to the mail...waiting to be sent..')
+        Encoders.encode_base64(part)
+        part.add_header('Content-Disposition', 'attachment; filename="extracted_jobs_%s.%s"' % (current_date_string, file_format) )
+        msg.attach(part)
 
-            smtp.sendmail(fromaddr, toaddrs, msg.as_string())
-
+        smtp.sendmail(fromaddr, toaddrs, msg.as_string())
+        logger.info('done sending email to subscribers...')
+    except Exception as e:
+        logger.error(e)
+    finally:
         smtp.quit()
 
 
@@ -202,15 +212,11 @@ def run_scheduler():
         'max_instances': 3
     }
     scheduler = BackgroundScheduler(executors=executors, job_defaults=job_defaults)
-    crawler_trigger = CronTrigger(hour='*/08')
-    #crawler_trigger = CronTrigger(minute='*/05')
-    hourse_keeping_trigger = CronTrigger(hour='12', minute='30')
 
-    heartbeat_trigger = CronTrigger(minute='*/30')
-
-    scheduler.add_job(func=run_crawler, trigger=crawler_trigger)
-    scheduler.add_job(func=run_housekeeper, trigger=hourse_keeping_trigger)
-    scheduler.add_job(func=run_heartbeater, trigger=heartbeat_trigger)
+    scheduler.add_job(func=run_crawler, trigger=CronTrigger(hour='*/08'))
+    scheduler.add_job(func=run_housekeeper, trigger=CronTrigger(hour='12'))
+    scheduler.add_job(func=run_heartbeater, trigger=CronTrigger(minute='*/30'))
+    scheduler.add_job(func=run_emailer, trigger=CronTrigger(hour='23'))
     
     scheduler.start()
     logger.info('scheduler is started')
@@ -223,7 +229,8 @@ def run_app():
 def parse_process_args():
     import argparse
     parser = argparse.ArgumentParser('run the app component')
-    parser.add_argument('component', nargs='?', default='all', type=str,  help='app component to run. [all|web|flask_web|scheduler|crawler|housekeeper|heartbeater]')
+    parser.add_argument('component', nargs='?', default='all', type=str,  
+        help='app component to run. [all|web|flask_web|scheduler|crawler|housekeeper|heartbeater|emailer]')
     args = parser.parse_args()
 
     if args.component is None:
@@ -244,6 +251,8 @@ def parse_process_args():
         run_flask_web()
     elif args.component == 'create_db':
         create_db()
+    elif args.component == 'emailer':
+        run_emailer()
     else:
         print 'Invalid Usage: '
         parser.print_help()

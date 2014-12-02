@@ -2,6 +2,7 @@
 import os
 import logging
 
+APP_NAME = 'Zjobs'
 APP_HOME = '/apps/jobcrawler'
 #DB_FILE = APP_HOME + '/db/jobcrawler.db'
 DB_HOST = os.environ.get('DB_HOST', 'localhost')
@@ -9,15 +10,12 @@ DATABASE = os.environ.get('DATABASE', 'zjobs')
 DB_USER = os.environ.get('DB_USER', 'zjobs')
 DB_PASSWORD = os.environ.get('DB_PASSWORD', 'zjobs')
 
-SEND_EMAIL_ENABLED = False
-IS_CLEAN_INSTALL = True  # used in create_db.py 
-REFRESH_DB_ENABLED = False
-
 TO_ADDRS = ['mengfeng0904@gmail.com', 'cathytheone@live.cn']
 FROM_ADDR = 'zorg.groups@gmail.com'
-SMTP_HOST = 'smtp.gmail.com'
-SMTP_PORT = 587
-SMTP_USER = 'zorg.groups@gmail.com'
+
+SMTP_HOST = os.environ.get('SMTP_HOST','smtp.gmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT','587'))
+SMTP_USER = os.environ.get('SMTP_USER','zorg.groups@gmail.com')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
 
 JOB_RULE_OUT_PATTERN = u'找*工作|找*[工|活|职]|求职|换[工|公]*|本人|承接|我人'

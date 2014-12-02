@@ -7,7 +7,7 @@ import json
 import os
 import datetime
 
-from app.run import run_housekeeper, run_crawler, extract_file_as_bytes
+from app.run import run_housekeeper, run_crawler, run_emailer, extract_file_as_bytes
 
 from jobcrawler.items import JobItem
 
@@ -66,6 +66,11 @@ def re_run_crawler():
 @app.route('/admin/run_housekeeper', methods=['GET'])
 def re_run_housekeeper():
     run_housekeeper()
+    return redirect(url_for('index'))
+
+@app.route('/admin/run_emailer', methods=['GET'])
+def re_run_emailer():
+    run_emailer()
     return redirect(url_for('index'))
 
 def date_handler(obj):
