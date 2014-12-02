@@ -5,12 +5,9 @@ from flask import g, request
 import app.config as config
 import json
 import os
-import xlsxwriter
-import unicodecsv
-import tempfile
 import datetime
 
-from app.run import run_housekeeper, run_crawler
+from app.run import run_housekeeper, run_crawler, extract_file_as_bytes
 
 from jobcrawler.items import JobItem
 
@@ -53,44 +50,13 @@ def get_jobs():
     
     return json.dumps(paged_result, default=date_handler)
 
-@app.route('/extract/csv')
-def extract_to_csv():
-    tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix='.csv', delete=False)).name
-    property_names, rows = JobItem.findall()
+@app.route('/extract/<format>')
+def extract_as_file(format='xlsx'):
 
-    with open(tmp_file, 'w') as f:
-        writer = unicodecsv.writer(f, encoding='utf-8')
-        writer.writerow([property_name.upper() for property_name in property_names])
-        for row in rows:
-            writer.writerow(row)
-        response = make_response(open(tmp_file, 'rb').read())
-        response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs_%s.csv" % datetime.datetime.now().strftime('%Y-%m-%d')
+    response = make_response(extract_file_as_bytes(format))
+    response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs_%s.%s" % (datetime.datetime.now().strftime('%Y-%m-%d'), format)
     
-    os.remove(tmp_file)
     return response
-
-@app.route('/extract/xlsx')
-def extract_to_xlsx():
-    tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix='.xlsx', delete=False)).name  
-    
-    property_names, rows = JobItem.findall()
-    
-    workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format':'yyyy-mm-dd'})
-    worksheet = workbook.add_worksheet('crawled_jobs')
-    worksheet.set_column('A:M', 40)
-
-    worksheet.write_row(0, 0, [property_name.upper() for property_name in property_names])
-
-    for rowIdx, row in enumerate(rows):
-        worksheet.write_row(rowIdx+1, 0, row)
-    
-    workbook.close()
-
-    response = make_response(open(tmp_file, 'rb').read())
-    response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs_%s.xlsx" % datetime.datetime.now().strftime('%Y-%m-%d')
-    os.remove(tmp_file)
-    return response
-
 
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():
@@ -98,7 +64,7 @@ def re_run_crawler():
     return redirect(url_for('index'))
 
 @app.route('/admin/run_housekeeper', methods=['GET'])
-def re_run_housekeeping():
+def re_run_housekeeper():
     run_housekeeper()
     return redirect(url_for('index'))
 

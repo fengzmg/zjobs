@@ -5,7 +5,7 @@
 <div>
     <div class="table-toolbar">
         Download as Excel
-        <a class="glyphicon glyphicon-floppy-save" href="{{ url_for('extract_to_xlsx') }}" title="Download as Excel" style="font-size: 140%">
+        <a class="glyphicon glyphicon-floppy-save" href="{{ url_for('extract_as_file', format='xlsx') }}" title="Download as Excel" style="font-size: 140%">
         </a>
     </div>
     <table class="table table-bordered table-striped table-hover">
