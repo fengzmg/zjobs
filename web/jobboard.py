@@ -6,8 +6,7 @@ import app.config as config
 import json
 import datetime
 
-from app.run import run_housekeeper, run_crawler, run_emailer, extract_file_as_bytes
-
+from app.run import run_housekeeper, run_crawler, run_emailer, extract_file_as_bytes, Scheduler
 from jobcrawler.items import JobItem
 
 
@@ -63,21 +62,18 @@ def extract_as_file(format='xlsx'):
 
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():
-    run_crawler()
+    Scheduler.get_scheduler().add_job(func=run_crawler)
     return redirect(url_for('index'))
 
 @app.route('/admin/run_housekeeper', methods=['GET'])
 def re_run_housekeeper():
-    run_housekeeper()
+    Scheduler.get_scheduler().add_job(func=run_housekeeper)
     return redirect(url_for('index'))
 
 @app.route('/admin/run_emailer', methods=['GET'])
 def re_run_emailer():
-    run_emailer()
+    Scheduler.get_scheduler().add_job(func=run_emailer)
     return redirect(url_for('index'))
 
 def date_handler(obj):
     return obj.isoformat() if hasattr(obj, 'isoformat') else obj
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=config.WEB_HTTP_PORT, debug=config.WEB_DEBUG_ENABLED)

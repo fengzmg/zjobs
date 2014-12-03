@@ -15,6 +15,22 @@ from multiprocessing import Pool
 import datetime
 import time
 
+from apscheduler.triggers.cron import CronTrigger
+
+from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.schedulers.background import BackgroundScheduler
+
+class Scheduler:   
+    scheduler = None
+    @staticmethod
+    def get_scheduler():
+        if Scheduler.scheduler is None:
+            Scheduler.scheduler= BackgroundScheduler(logger=logger)
+            Scheduler.scheduler.start()
+        
+        return Scheduler.scheduler
+
 def create_db():
     #conn = sqlite3.connect(config.DB_FILE)
     conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
@@ -198,47 +214,31 @@ def run_emailer():
 
 
 
-def run_scheduler():
-    from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-    from apscheduler.triggers.cron import CronTrigger
-    from apscheduler.schedulers.background import BackgroundScheduler
-
-    executors = {
-        'default': ThreadPoolExecutor(2),
-        'processpool': ProcessPoolExecutor(2)
-    }
-    job_defaults = {
-        'coalesce': False,
-        'max_instances': 3
-    }
-    scheduler = BackgroundScheduler(executors=executors, job_defaults=job_defaults)
-
+def run_batch_jobs():
+    scheduler = Scheduler.get_scheduler()
     scheduler.add_job(func=run_crawler, trigger=CronTrigger(hour='*/08'))
-    scheduler.add_job(func=run_housekeeper, trigger=CronTrigger(hour='12'))
+    scheduler.add_job(func=run_housekeeper, trigger=CronTrigger(hour='23', minute='05'))
     scheduler.add_job(func=run_heartbeater, trigger=CronTrigger(minute='*/30'))
-    scheduler.add_job(func=run_emailer, trigger=CronTrigger(hour='23'))
+    scheduler.add_job(func=run_emailer, trigger=CronTrigger(hour='23', minute='35'))
     
-    scheduler.start()
-    logger.info('scheduler is started')
-
 
 def run_app():
-    run_scheduler()
+    run_batch_jobs()
     run_web()
 
 def parse_process_args():
     import argparse
     parser = argparse.ArgumentParser('run the app component')
     parser.add_argument('component', nargs='?', default='all', type=str,  
-        help='app component to run. [all|web|flask_web|scheduler|crawler|housekeeper|heartbeater|emailer]')
+        help='app component to run. [all|web|flask_web|batch_jobs|crawler|housekeeper|heartbeater|emailer]')
     args = parser.parse_args()
 
     if args.component is None:
         run_app()
     elif args.component == 'all':
         run_app()
-    elif args.component == 'scheduler':
-        run_scheduler()
+    elif args.component == 'batch_jobs':
+        run_batch_jobs()
     elif args.component == 'crawler':
         run_crawler()
     elif args.component == 'housekeeper':
