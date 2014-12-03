@@ -4,17 +4,17 @@ from scrapy.contrib.spiders.crawl import CrawlSpider, Rule
 from scrapy.http.request import Request
 from scrapy.contrib.linkextractors import LinkExtractor
 from jobcrawler.items import JobItem
-from scrapy import log, Selector
+import re
 
-class SingxinSpider(CrawlSpider):
-    name = "singxin"
-    allowed_domains = ["singxin.com"]
+class SggonguoSpider(CrawlSpider):
+    name = "sggongzuo"
+    allowed_domains = ["gongzuo.sg"]
     start_urls = (
-        'http://www.singxin.com/category/view/id/47',
+        'http://www.gongzuo.sg',
     )
 
     rules = (
-        Rule(LinkExtractor(allow='/category/view/id/47/page/[0-3]'), callback='parse_item', follow=True, ),
+        Rule(LinkExtractor(allow='/\?page=[0-2]'), callback='parse_item', follow=False, ),
     )
 
     def parse_start_url(self, response):
@@ -23,7 +23,7 @@ class SingxinSpider(CrawlSpider):
 
     def parse_item(self, response):
         requests = []
-        for job_item in response.xpath('//div[@class="listCell"]'):
+        for job_item in response.xpath('//div[@class="summary"]'):
             job_crawler_item = JobItem()
             
             self.populate_job_crawler_item(job_item, job_crawler_item)
@@ -37,36 +37,26 @@ class SingxinSpider(CrawlSpider):
 
     def populate_job_crawler_item(self, detail_item, job_crawler_item):
         try:
-            job_crawler_item['job_title'] = detail_item.xpath('.//a[@class="title"]/text()').extract()[0]
-            job_crawler_item['job_details_link'] = 'http://www.singxin.com' + detail_item.re(r'<a.*href="(/info/view/id/[0-9]+)">.*</a>')[0]
+            job_crawler_item['job_title'] = detail_item.xpath('.//div[@class="title"]/a[1]/text()').extract()[0]
+            job_crawler_item['job_details_link'] = detail_item.xpath('.//div[@class="title"]/a[1]/@href').extract()[0]
             job_crawler_item['job_country'] = 'Singapore'
             job_crawler_item['job_location'] = 'Singapore'
-            job_crawler_item['contact'] = detail_item.re(r'<a.*href="tel:(.*)">.*</a>')[0]
+            job_crawler_item['publish_date'] = re.search(r'.*([0-9]{4}-[0-9]{2}-[0-9]{2}).*', detail_item.xpath('.//div[@class="attr"]/text()[2]').extract()[0], re.M).group(1).strip()
+            #Convert to the datetime format
+            job_crawler_item['publish_date'] = datetime.datetime.strptime(job_crawler_item.get('publish_date'), '%Y-%m-%d') if job_crawler_item.get('publish_date', None) is not None else None
+            job_crawler_item['salary'] = detail_item.xpath('.//div[@class="attr"]/text()[4]').extract()[0].replace(',','').strip()
             job_crawler_item['source'] = self.name
             job_crawler_item['crawled_date'] = datetime.datetime.now()
 
         except Exception as e:
             print e
 
-    def populate_salary(self, detail_item, job_crawler_item):
-        # job_crawler_item['salary'] = detail_item.xpath('./text()').extract()[0]
-        pass
-
-    def populate_employer_name(self, detail_item, job_crawler_item):
-        # job_crawler_item['employer_name'] = detail_item.xpath('./text()').extract()[0]
-        pass
-
-
     def retrieve_job_details(self, response):
         job_crawler_item = response.meta['item']
 
         try:
             job_crawler_item['job_desc'] = response.xpath('/html/head/meta[@name="description"]/@content').extract()[0]
-
-            job_crawler_item['publish_date'] = response.selector.re('<td><i class="icon-calendar icon-small"></i>(.*)</td>')[0].replace(' ', '')
-            
-            #Convert to the datetime format
-            job_crawler_item['publish_date'] = datetime.datetime.strptime(job_crawler_item.get('publish_date'), '%Y-%m-%d') if job_crawler_item.get('publish_date', None) is not None else None
+            job_crawler_item['contact'] = response.xpath('//div[@id="article-body"]/div[@class="attr"]/text()[3]').extract()[0].strip()
         except Exception as e:
             print e
 

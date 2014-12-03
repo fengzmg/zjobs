@@ -102,7 +102,7 @@ def run_crawler():
     logger.info('start running crawler..')
 
     # os.system('python '+ app_home_dir +'/app/run_crawler.py')
-    spider_names = ['sgxin', 'shichengbbs', 'singxin']
+    spider_names = ['sgxin', 'shichengbbs', 'singxin', 'sggongzuo']
     
     pool = Pool(processes=len(spider_names))
     pool.map(_crawl, spider_names)
