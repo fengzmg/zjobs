@@ -118,12 +118,12 @@ def run_flask_web():
     web.jobboard.app.run(host='0.0.0.0', port=config.WEB_HTTP_PORT, debug=config.WEB_DEBUG_ENABLED)
 
 def run_heartbeater():
-    import urllib
+    import requests
 
-    logger.info('scheduler started heartbeating..')
-    resp = urllib.urlopen(config.APP_HEARTBEAT_URL)
-    resp.read()
-    logger.info('scheduler done hearting beating')
+    logger.info('started heartbeating..')
+    resp = requests.get(config.APP_HEARTBEAT_URL, headers={'User-Agent': 'Zjobs Heartbeater'})
+    logger.info('heartbeater received status_code %s', resp.status_code)
+    logger.info('done hearting beating')
 
 def run_housekeeper():
 
