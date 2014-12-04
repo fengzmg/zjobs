@@ -35,6 +35,7 @@ class JobItem(scrapy.Item):
     property_names = ['job_title', 'job_desc', 'job_details_link', 'job_location', 'job_country',
                       'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
 
+    
     @staticmethod
     def save(item=None):
         if item:
@@ -105,7 +106,8 @@ class JobItem(scrapy.Item):
                 c = conn.cursor()
                 c.execute("SELECT COUNT(*) FROM CRAWLED_JOBS WHERE job_title='%s'" % job_title)
                 job_item_count = int(c.fetchone()[0])
-            
+                conn.close()
+
                 return job_item_count > 0
             else:
                 raise JobItemDBError('job_title cannot be Empty in is_exsits() method')
@@ -138,13 +140,15 @@ class JobItem(scrapy.Item):
                     SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC \
                 ) AS RESULT LIMIT %s OFFSET %s  ', (size, size*(page_no-1) ) )
 
+        conn.close()
         return JobItem.property_names, c.fetchall()
 
     @staticmethod
     def findall():
         conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
-        c = conn.cursor()
+        c = JobItem.conn.cursor()
         c.execute('SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
+        conn.close()
         return JobItem.property_names, c.fetchall()
 
     @staticmethod
@@ -156,7 +160,7 @@ class JobItem(scrapy.Item):
             c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS')
         else:
             c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS')
-
+        conn.close()
         return c.fetchone()[0]
 
     @staticmethod
