@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 import datetime
-from scrapy.contrib.spiders.crawl import CrawlSpider, Rule
-from scrapy.http.request import Request
+from scrapy.contrib.spiders.crawl import Rule
 from scrapy.contrib.linkextractors import LinkExtractor
-
+from jobcrawler.spiders.base import BaseSpider
 from jobcrawler.items import JobItem
+from scrapy.http.request import Request
+import app.config as config
+import re
 
 
-class SgxinSpider(CrawlSpider):
+
+class SgxinSpider(BaseSpider):
     name = "sgxin"
     allowed_domains = ["sgxin.com"]
     start_urls = (
@@ -38,9 +41,10 @@ class SgxinSpider(CrawlSpider):
             for index, detail_item in enumerate(job_item.xpath('./td')):
                 self.populate_job_crawler_item(index, detail_item, job_crawler_item)
                 if index == 4:
-                    requests.append(
-                        Request(url=job_crawler_item.get('job_details_link', ''), callback=self.retrieve_job_details,
-                                meta={'item': job_crawler_item}, dont_filter=True))
+                    if self.should_load_details(job_crawler_item):
+                        requests.append(
+                            Request(url=job_crawler_item.get('job_details_link', ''), callback=self.retrieve_job_details,
+                                    meta={'item': job_crawler_item}, dont_filter=True))
 
         return requests
 

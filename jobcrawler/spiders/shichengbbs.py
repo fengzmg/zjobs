@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import datetime
-from scrapy.contrib.spiders.crawl import CrawlSpider, Rule
-from scrapy.http.request import Request
+from scrapy.contrib.spiders.crawl import Rule
 from scrapy.contrib.linkextractors import LinkExtractor
-from jobcrawler.items import JobItem
+from jobcrawler.spiders.base import BaseSpider
 
-class ShichengBBSSpider(CrawlSpider):
+class ShichengBBSSpider(BaseSpider):
     name = "shichengbbs"
     allowed_domains = ["shichengbbs.com"]
     start_urls = (
@@ -21,16 +20,7 @@ class ShichengBBSSpider(CrawlSpider):
 
 
     def parse_item(self, response):
-        requests = []
-        for job_item in response.xpath('//div[@class="listCell row-fluid"]'):
-            job_crawler_item = JobItem()
-            self.populate_job_crawler_item(job_item, job_crawler_item)
-            requests.append(
-                Request(url=job_crawler_item.get('job_details_link', ''), callback=self.retrieve_job_details,
-                        meta={'item': job_crawler_item}, dont_filter=True))
-
-        return requests
-
+        return self.parse_item_requests_callback(response, '//div[@class="listCell row-fluid"]')
 
     def populate_job_crawler_item(self, detail_item, job_crawler_item):
 
@@ -51,14 +41,6 @@ class ShichengBBSSpider(CrawlSpider):
             job_crawler_item['crawled_date'] = datetime.datetime.now()
         except:
             pass
-
-    def populate_salary(self, detail_item, job_crawler_item):
-        # job_crawler_item['salary'] = detail_item.xpath('./text()').extract()[0]
-        pass
-
-    def populate_employer_name(self, detail_item, job_crawler_item):
-        # job_crawler_item['employer_name'] = detail_item.xpath('./text()').extract()[0]
-        pass
 
 
     def retrieve_job_details(self, response):

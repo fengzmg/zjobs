@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 import datetime
-from scrapy.contrib.spiders.crawl import CrawlSpider, Rule
-from scrapy.http.request import Request
+from scrapy.contrib.spiders.crawl import Rule
 from scrapy.contrib.linkextractors import LinkExtractor
-from jobcrawler.items import JobItem
+from jobcrawler.spiders.base import BaseSpider
 import re
 
-class SggonguoSpider(CrawlSpider):
+class SggonguoSpider(BaseSpider):
     name = "sggongzuo"
     allowed_domains = ["gongzuo.sg"]
     start_urls = (
@@ -22,17 +21,7 @@ class SggonguoSpider(CrawlSpider):
 
 
     def parse_item(self, response):
-        requests = []
-        for job_item in response.xpath('//div[@class="summary"]'):
-            job_crawler_item = JobItem()
-            
-            self.populate_job_crawler_item(job_item, job_crawler_item)
-            
-            requests.append(
-                Request(url=job_crawler_item.get('job_details_link'), callback=self.retrieve_job_details,
-                        meta={'item': job_crawler_item}, dont_filter=True))
-
-        return requests
+        return self.parse_item_requests_callback(response, '//div[@class="summary"]')
 
 
     def populate_job_crawler_item(self, detail_item, job_crawler_item):
