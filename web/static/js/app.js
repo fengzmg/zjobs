@@ -79,7 +79,7 @@ angular.module('myApp', [
         }
     };
 })
-.directive("loadingindicator", function($rootScope) {
+.directive("loadingindicator", ['$rootScope', function($rootScope) {
     return {
         replace: true,
         controller : function($rootScope) {
@@ -95,10 +95,28 @@ angular.module('myApp', [
 
         template: '<img id="loader" src="/static/image/ajax-loader.gif" style="display: none"/>'
     };
-})
+}])
+.directive("menu", ['$http', function($http) {
+    return {
+        replace: true,
+        controller : function($scope) {
+            $http.get('/menus').success(
+                function(data, status, headers, config){
+                    $scope.menu_items = data.menu_items;
+                }
+                ).error(
+                    function(data, status, headers, config){
+                        alert('Cannot load menu');
+                    }                   
+                );
+        },
+
+        template: '<span ng-repeat="menu_item in menu_items" >[<a href="[[ menu_item.link]]">[[menu_item.label]]</a>]</span>'      
+    };
+}])
 .controller('homeController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
-            $http.post('jobs', $scope.page_request).success(function(data, status, headers, config){
+            $http.post('/jobs', $scope.page_request).success(function(data, status, headers, config){
                 $scope.paged_result = data;
                 $scope.jobs=data.content;
             }).error(function(data, status, headers, config){

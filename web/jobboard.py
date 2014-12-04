@@ -52,6 +52,15 @@ def get_jobs():
     
     return json.dumps(paged_result, default=date_handler)
 
+@app.route('/menus', methods=['GET','POST'])
+def get_menu():
+    menu_items={'menu_items':[]}
+    menu_items['menu_items'].append({'label': 'Run Crawler', 'link': '/admin/run_crawler'})
+    menu_items['menu_items'].append({'label': 'Run Emailer', 'link': '/admin/run_emailer'})
+    menu_items['menu_items'].append({'label': 'Run Housekeeper', 'link': '/admin/run_housekeeper'})
+
+    return json.dumps(menu_items)
+
 @app.route('/extract/<format>')
 def extract_as_file(format='xlsx'):
 
