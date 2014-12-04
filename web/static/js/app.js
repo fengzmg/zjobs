@@ -111,7 +111,18 @@ angular.module('myApp', [
                 );
         },
 
-        template: '<span ng-repeat="menu_item in menu_items" >[<a href="[[ menu_item.link]]">[[menu_item.label]]</a>]</span>'      
+        /*template: '<span ng-repeat="menu_item in menu_items">[<a href="[[ menu_item.link]]">[[menu_item.label]]</a>]</span>'  */
+
+        template: '<div class="dropdown">' +
+          '<a class="dropdown-toggle" id="adminMenu" data-toggle="dropdown">' + 
+            'Admin Actions' +
+            '<span class="caret"></span>' +
+          '</a>' +
+          '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="adminMenu">' +
+            '<li role="presentation" ng-repeat="menu_item in menu_items"><a role="menuitem" tabindex="-1"href="[[ menu_item.link]]">[[menu_item.label]]</a></li>' +
+          '</ul>' +
+        '</div>'
+
     };
 }])
 .controller('homeController', ['$scope','$http', function($scope, $http) {
@@ -120,7 +131,7 @@ angular.module('myApp', [
                 $scope.paged_result = data;
                 $scope.jobs=data.content;
             }).error(function(data, status, headers, config){
-
+                alert('Unable to load jobs');
             });
         }
 
