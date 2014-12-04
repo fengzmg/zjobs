@@ -56,7 +56,7 @@ class SggonguoSpider(CrawlSpider):
 
         try:
             job_crawler_item['job_desc'] = response.xpath('/html/head/meta[@name="description"]/@content').extract()[0]
-            job_crawler_item['contact'] = response.xpath('//div[@id="article-body"]/div[@class="attr"]/text()[3]').extract()[0].strip()
+            job_crawler_item['contact'] = response.xpath('//div[@id="article-body"]/div[@class="attr"]/text()[3]').extract()[0].replace('\n', '').strip()
         except Exception as e:
             print e
 

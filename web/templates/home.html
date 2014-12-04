@@ -19,8 +19,8 @@
         <tr ng-repeat="job in jobs">
             <td><span ng-bind-html="job.source | displayAsIcon"></span></td>
             <td><a href="[[job.job_details_link]]" target="_blank" tooltip title="[[ job.job_desc ]]" >[[ job.job_title ]]</a></td>
-            <td>[[ job.job_location ]]</td>
-            <td>[[ job.contact ]]</td>
+            <td>[[ job.job_location ]]</td></td>
+            <td><span ng-bind-html="job.contact | displayAsPhoneLink"></span></td>
             <td>[[ job.publish_date | limitTo:10 ]]</td>
         </tr>
         </tbody>

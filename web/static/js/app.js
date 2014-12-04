@@ -37,10 +37,21 @@ angular.module('myApp', [
 .filter('displayAsIcon', ['$sce',function($sce) {
     var site_urls = {
     'sgxin':'http://www.sgxin.com',
-    'shichengbbs':'http://www.shichengbbs.com'
+    'shichengbbs':'http://www.shichengbbs.com',
+    'singxin':'http://www.singxin.com'
     }
   return function(source) {
     return $sce.trustAsHtml('<a href="'+ site_urls[source] +'" target="_blank"><img class="siteImage"  src="/static/image/'+source+'_logo.png"/></a>');
+  };
+}])
+.filter('displayAsPhoneLink', ['$sce',function($sce) {
+  return function(source) {
+    if(source && source !=''){
+        return $sce.trustAsHtml('<span class="glyphicon glyphicon-phone-alt">&nbsp;</span><a href="tel:'+ source +'" target="_blank">'+source+'</a>');
+    }else{
+        return $sce.trustAsHtml('');   
+    }
+    
   };
 }])
 .filter('siteImageUrl', function() {
