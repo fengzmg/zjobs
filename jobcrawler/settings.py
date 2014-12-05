@@ -34,11 +34,11 @@ DEFAULT_REQUEST_HEADERS = {
 
 ITEM_PIPELINES = {
 
-	'jobcrawler.pipelines.ItemPrintingPipeline': 1,
-    'jobcrawler.pipelines.ItemRecuritValidationPipeline': 2,
-    'jobcrawler.pipelines.ItemPostedByAgentPipeline': 3,
-    'jobcrawler.pipelines.ItemDuplicationCheckPipeline': 4,
-    'jobcrawler.pipelines.ItemPublishDateFilterPipeline': 5,
+    'jobcrawler.pipelines.ItemRecuritValidationPipeline': 1,
+    'jobcrawler.pipelines.ItemPostedByAgentPipeline': 2,
+    'jobcrawler.pipelines.ItemDuplicationCheckPipeline': 3,
+    'jobcrawler.pipelines.ItemPublishDateFilterPipeline': 4,
+    'jobcrawler.pipelines.ItemPrintingPipeline': 5,
     'jobcrawler.pipelines.ItemSaveToDBPipeline': 6
 }
 

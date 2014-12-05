@@ -39,7 +39,7 @@ logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 # create formatter and add it to the handlers
-formatter = logging.Formatter('[%(asctime)s] [%(process)d-%(thread)d] [%(levelname)s] [%(name)s] %(message)s')
+formatter = logging.Formatter('[%(asctime)s] [%(process)d] [%(levelname)s] [%(name)s] %(message)s')
 ch.setFormatter(formatter)
 # add the handlers to the logger
 logger.addHandler(ch)
