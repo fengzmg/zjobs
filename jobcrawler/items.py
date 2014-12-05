@@ -39,30 +39,9 @@ class JobItem(scrapy.Item):
     @staticmethod
     def save(item=None):
         if item:
-            #conn = dbi.connect(config.DB_FILE)
             conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
             try:
                 c = conn.cursor()
-                # c.execute('INSERT INTO CRAWLED_JOBS '
-                #           '('
-                #           'job_title, job_desc, job_details_link, job_location, job_country,'
-                #           'salary, employer_name, publish_date, contact, source, crawled_date'
-                #           ') '
-                #           'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
-                #           (
-                #               item.get('job_title', None),
-                #               item.get('job_desc', None),
-                #               item.get('job_details_link', None),
-                #               item.get('job_location', None),
-                #               item.get('job_country', None),
-                #               item.get('salary', None),
-                #               item.get('employer_name', None),
-                #               item.get('publish_date', None),
-                #               item.get('contact', None),
-                #               spider.name,
-                #               datetime.datetime.now()
-
-                #           ))
 
                 c.execute('INSERT INTO CRAWLED_JOBS '
                           '('
@@ -84,16 +63,15 @@ class JobItem(scrapy.Item):
                               item.get('crawled_date', None)
 
                           ))
+                logger.info('Saved job: %s' % item.get('job_title', '--'))
 
                 conn.commit()
             except:
                 conn.rollack()
                 logger.info('Unable to save the job: %s' % item.get('job_title', '--'))
-                raise JobItemDBError('Unable to save the job')
+                #raise JobItemDBError('Unable to save the job')
             finally:
                 conn.close()
-
-            logger.info('Saved job: %s' % item.get('job_title', '--'))
 
     @staticmethod
     def is_exists(item=None):
@@ -102,19 +80,22 @@ class JobItem(scrapy.Item):
             job_title = item.get('job_title', None)
 
             if job_title:
-                try:
-                    conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+                conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+                try:                   
                     c = conn.cursor()
                     c.execute("SELECT COUNT(*) FROM CRAWLED_JOBS WHERE job_title='%s'" % job_title)
                     job_item_count = int(c.fetchone()[0])
                     return job_item_count > 0
+                except:
+                    logger.info('failed to retrieve the item count')
+                    return False
                 finally:
                     conn.close()
             else:
-                raise JobItemDBError('job_title cannot be Empty in is_exsits() method')
+                return True
                 
         else:
-            raise JobItemDBError('item cannot be Empty in is_exsits() method')
+            return True
 
     
     @staticmethod
