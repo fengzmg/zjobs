@@ -109,6 +109,13 @@ angular.module('myApp', [
                         alert('Cannot load menu');
                     }                   
                 );
+
+            //Add auto-open on menu mouse hover
+            $('.dropdown').hover(function(){ 
+                $('.dropdown-toggle', this).trigger('click'); 
+            });
+
+
         },
 
         /*template: '<span ng-repeat="menu_item in menu_items">[<a href="[[ menu_item.link]]">[[menu_item.label]]</a>]</span>'  */
