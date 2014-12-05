@@ -13,7 +13,7 @@ class SggonguoSpider(BaseSpider):
     )
 
     rules = (
-        Rule(LinkExtractor(allow='/\?page=[0-2]'), callback='parse_item', follow=False, ),
+        Rule(LinkExtractor(allow='/\?page=[0-2]'), callback='parse_item', follow=True, ),
     )
 
     def parse_start_url(self, response):

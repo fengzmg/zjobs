@@ -41,24 +41,6 @@ def create_db():
         c.execute('DROP TABLE IF EXISTS CRAWLED_JOBS')
         c.execute('DROP INDEX IF EXISTS job_title_idx')
 
-        logger.info("dropped related tables and indexes")
-
-        # c.execute('''
-        #     CREATE TABLE IF NOT EXISTS CRAWLED_JOBS(
-        #         source            text,
-        #         crawled_date      timestamp,
-        #         publish_date      timestamp,
-        #         job_title         text,
-        #         job_desc          text,
-        #         job_details_link  text,
-        #         job_location      text,
-        #         job_country       text,
-        #         salary            text,
-        #         employer_name     text,
-        #         contact           text
-        #     );
-        # ''')
-
         c.execute('''
             CREATE TABLE IF NOT EXISTS CRAWLED_JOBS(
                 source            text,
@@ -72,16 +54,32 @@ def create_db():
                 salary            text,
                 employer_name     text,
                 contact           text
-            );
+            )
             ''')
 
-        logger.info("created related tables")
+        logger.info("created table and indexes for CRAWLED_JOBS")
 
         c.execute('''
             CREATE UNIQUE INDEX job_title_idx ON CRAWLED_JOBS(job_title)
         ''')
 
-        logger.info("created related indexes")
+
+        c.execute('DROP TABLE IF EXISTS JOB_REJECTION_RULES')
+        c.execute('DROP INDEX IF EXISTS reject_pattern_idx')
+
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS JOB_REJECTION_RULES(
+                reject_pattern    text,
+                reject_reason     text
+            )
+            ''')
+
+        c.execute('''
+            CREATE UNIQUE INDEX reject_pattern_idx ON JOB_REJECTION_RULES(reject_pattern)
+        ''')
+
+        logger.info("created table and indexes for JOB_REJECTION_RULES")
+       
 
         conn.commit()
         logger.info('done create database')

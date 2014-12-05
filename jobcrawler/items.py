@@ -12,13 +12,20 @@ from app.config import logger
 import pg8000 as dbi
 import app.config as config
 
+class BaseObject:
+
+    @classmethod
+    def connect_db(cls):
+        return dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+
+
 class JobItemDBError(Exception):
     def __init__(self, message):
         self.message = message
     def __str__(self):
         return repr(self.message)
 
-class JobItem(scrapy.Item):
+class JobItem(scrapy.Item, BaseObject):
     # define the fields for your item here like:
     job_title = scrapy.Field()
     job_desc = scrapy.Field()
@@ -35,20 +42,21 @@ class JobItem(scrapy.Item):
     property_names = ['job_title', 'job_desc', 'job_details_link', 'job_location', 'job_country',
                       'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
 
+    table_name = 'CRAWLED_JOBS'
     
-    @staticmethod
-    def save(item=None):
+    @classmethod
+    def save(cls, item=None):
         if item:
-            conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+            conn = cls.connect_db()
             try:
                 c = conn.cursor()
 
-                c.execute('INSERT INTO CRAWLED_JOBS '
+                c.execute('INSERT INTO ' + cls.table_name +
                           '('
                           'job_title, job_desc, job_details_link, job_location, job_country,'
                           'salary, employer_name, publish_date, contact, source, crawled_date'
                           ') '
-                          'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);',
+                          'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
                           (
                               item.get('job_title', None),
                               item.get('job_desc', None),
@@ -67,23 +75,23 @@ class JobItem(scrapy.Item):
 
                 conn.commit()
             except:
-                conn.rollack()
+                conn.rollback()
                 logger.info('Unable to save the job: %s' % item.get('job_title', '--'))
                 #raise JobItemDBError('Unable to save the job')
             finally:
                 conn.close()
 
-    @staticmethod
-    def is_exists(item=None):
+    @classmethod
+    def is_exists(cls, item=None):
         
         if item:
             job_title = item.get('job_title', None)
 
             if job_title:
-                conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+                conn = cls.connect_db()
                 try:                   
                     c = conn.cursor()
-                    c.execute("SELECT COUNT(*) FROM CRAWLED_JOBS WHERE job_title='%s'" % job_title)
+                    c.execute("SELECT COUNT(*) FROM " + cls.table_name + " WHERE job_title='%s'" % job_title)
                     job_item_count = int(c.fetchone()[0])
                     return job_item_count > 0
                 except:
@@ -98,14 +106,15 @@ class JobItem(scrapy.Item):
             return True
 
     
-    @staticmethod
-    def find_with_pagination(page_request={'page_no': 1, 'size': 25, 'criteria': None}):
+    @classmethod
+    def find_with_pagination(cls, page_request={'page_no': 1, 'size': 25, 'criteria': None}):
 
         size = page_request.get('size', 25)
         page_no = page_request.get('page_no', 1)
         criteria = page_request.get('criteria', None)
 
-        conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+        conn = cls.connect_db()
+
         try:
             c = conn.cursor()
             # rows = c.execute('SELECT * FROM ( \
@@ -115,51 +124,50 @@ class JobItem(scrapy.Item):
             if not criteria:
 
                 c.execute('SELECT * FROM ( \
-                        SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC \
+                        SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name +' ORDER BY publish_date DESC \
                     ) AS RESULT LIMIT %s OFFSET %s  ', (size, size*(page_no-1) ) )
             else:
                 #TODO need to add the criteria handling
                 c.execute('SELECT * FROM ( \
-                        SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC \
+                        SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
                     ) AS RESULT LIMIT %s OFFSET %s  ', (size, size*(page_no-1) ) )
 
             
-            return JobItem.property_names, c.fetchall()
+            return cls.property_names, c.fetchall()
         finally:
             conn.close()
 
-    @staticmethod
-    def findall():
-        conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+    @classmethod
+    def findall(cls):
+        conn = cls.connect_db()
         try:
             c = conn.cursor()
-            c.execute('SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
-            return JobItem.property_names, c.fetchall()
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC')
+            return cls.property_names, c.fetchall()
         finally:
-            print 'Closing the DB Connection'
             conn.close()
 
-    @staticmethod
-    def count(criteria=None):
+    @classmethod
+    def count(cls, criteria=None):
         
-        conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+        conn = cls.connect_db()
         try:
             c = conn.cursor()
             if criteria:
-                c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS')
+                c.execute('SELECT COUNT(*) FROM ' + cls.table_name)
             else:
-                c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS')
+                c.execute('SELECT COUNT(*) FROM ' + cls.table_name)
             
             return c.fetchone()[0]
         finally:
             conn.close()
 
-    @staticmethod
-    def remove_old_records(retention_days=14):
-        conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+    @classmethod
+    def remove_old_records(cls, retention_days=14):
+        conn = cls.connect_db()
         try:
             c = conn.cursor()
-            c.execute("DELETE FROM CRAWLED_JOBS WHERE publish_date < NOW() - INTERVAL '" + str(retention_days) +" days'")
+            c.execute("DELETE FROM ' + cls.table_name + ' WHERE publish_date < NOW() - INTERVAL '" + str(retention_days) +" days'")
             conn.commit()
         except:
             conn.rollback()
@@ -168,6 +176,54 @@ class JobItem(scrapy.Item):
             conn.close()
 
 
+class RejectionPattern(BaseObject):
+
+    property_names = ['reject_pattern', 'reject_reason']
+
+    table_name = 'JOB_REJECTION_RULES'
+
+    reject_pattern = None
+    reject_reason = None    
+
+    def __init__(self, reject_pattern=None, reject_reason=None):
+        self.reject_pattern = reject_pattern
+        self.reject_reason = reject_reason
+
+
+    @classmethod
+    def findall(cls):
+        conn = cls.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ')
+            return cls.property_names, c.fetchall()
+        finally:
+            conn.close()
+
+    def save(self):
+        if self:
+            conn = self.connect_db()
+            try:
+                c = conn.cursor()
+
+                c.execute('INSERT INTO ' + self.table_name +
+                          '('
+                          'reject_pattern, reject_reason'
+                          ') '
+                          'VALUES (%s, %s)',
+                          (
+                              self.reject_pattern,
+                              self.reject_reason
+                          ))
+                logger.info('Saved rejection pattern: %s' % self.reject_pattern)
+
+                conn.commit()
+            except:
+                conn.rollback()
+                logger.info('Unable to save the rejection pattern: %s' % self.reject_pattern)
+                #raise JobItemDBError('Unable to save the job')
+            finally:
+                conn.close()
 
 
 

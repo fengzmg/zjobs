@@ -7,7 +7,7 @@ import json
 import datetime
 
 from app.run import run_housekeeper, run_crawler, run_emailer, extract_file_as_bytes, Scheduler
-from jobcrawler.items import JobItem
+from jobcrawler.items import JobItem, RejectionPattern
 
 
 app = Flask(__name__)
@@ -70,6 +70,15 @@ def extract_as_file(format='xlsx'):
     
     return response
 
+@app.route('/reject_rules', methods=['GET'])
+def get_reject_rules():
+    reject_rule1 = RejectionPattern('something', 'something')
+    reject_rule1.save()
+    
+    property_names, results = RejectionPattern.findall()
+    records = [dict(zip(property_names, row)) for row in results]
+    return json.dumps(records)
+
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():
     Scheduler.get_scheduler().add_job(func=run_crawler)
@@ -84,6 +93,7 @@ def re_run_housekeeper():
 def re_run_emailer():
     Scheduler.get_scheduler().add_job(func=run_emailer)
     return redirect(url_for('index'))
+
 
 def date_handler(obj):
     return obj.isoformat() if hasattr(obj, 'isoformat') else obj
