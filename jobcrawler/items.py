@@ -102,13 +102,14 @@ class JobItem(scrapy.Item):
             job_title = item.get('job_title', None)
 
             if job_title:
-                conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
-                c = conn.cursor()
-                c.execute("SELECT COUNT(*) FROM CRAWLED_JOBS WHERE job_title='%s'" % job_title)
-                job_item_count = int(c.fetchone()[0])
-                conn.close()
-
-                return job_item_count > 0
+                try:
+                    conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+                    c = conn.cursor()
+                    c.execute("SELECT COUNT(*) FROM CRAWLED_JOBS WHERE job_title='%s'" % job_title)
+                    job_item_count = int(c.fetchone()[0])
+                    return job_item_count > 0
+                finally:
+                    conn.close()
             else:
                 raise JobItemDBError('job_title cannot be Empty in is_exsits() method')
                 
@@ -124,44 +125,53 @@ class JobItem(scrapy.Item):
         criteria = page_request.get('criteria', None)
 
         conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
-        c = conn.cursor()
-        # rows = c.execute('SELECT * FROM ( \
-        #         SELECT * FROM CRAWLED_JOBS ORDER BY publish_date DESC \
-        #     ) AS RESULT LIMIT ? OFFSET ?  ', (page_size, page_size*(page_no-1) ) )
+        try:
+            c = conn.cursor()
+            # rows = c.execute('SELECT * FROM ( \
+            #         SELECT * FROM CRAWLED_JOBS ORDER BY publish_date DESC \
+            #     ) AS RESULT LIMIT ? OFFSET ?  ', (page_size, page_size*(page_no-1) ) )
 
-        if not criteria:
+            if not criteria:
 
-            c.execute('SELECT * FROM ( \
-                    SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC \
-                ) AS RESULT LIMIT %s OFFSET %s  ', (size, size*(page_no-1) ) )
-        else:
-            #TODO need to add the criteria handling
-            c.execute('SELECT * FROM ( \
-                    SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC \
-                ) AS RESULT LIMIT %s OFFSET %s  ', (size, size*(page_no-1) ) )
+                c.execute('SELECT * FROM ( \
+                        SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC \
+                    ) AS RESULT LIMIT %s OFFSET %s  ', (size, size*(page_no-1) ) )
+            else:
+                #TODO need to add the criteria handling
+                c.execute('SELECT * FROM ( \
+                        SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC \
+                    ) AS RESULT LIMIT %s OFFSET %s  ', (size, size*(page_no-1) ) )
 
-        conn.close()
-        return JobItem.property_names, c.fetchall()
+            
+            return JobItem.property_names, c.fetchall()
+        finally:
+            conn.close()
 
     @staticmethod
     def findall():
         conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
-        c = JobItem.conn.cursor()
-        c.execute('SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
-        conn.close()
-        return JobItem.property_names, c.fetchall()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT ' + ','.join(JobItem.property_names) + ' FROM CRAWLED_JOBS ORDER BY publish_date DESC')
+            return JobItem.property_names, c.fetchall()
+        finally:
+            print 'Closing the DB Connection'
+            conn.close()
 
     @staticmethod
     def count(criteria=None):
         
         conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
-        c = conn.cursor()
-        if criteria:
-            c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS')
-        else:
-            c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS')
-        conn.close()
-        return c.fetchone()[0]
+        try:
+            c = conn.cursor()
+            if criteria:
+                c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS')
+            else:
+                c.execute('SELECT COUNT(*) FROM CRAWLED_JOBS')
+            
+            return c.fetchone()[0]
+        finally:
+            conn.close()
 
     @staticmethod
     def remove_old_records(retention_days=14):
