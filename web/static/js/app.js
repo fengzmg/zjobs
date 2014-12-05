@@ -119,9 +119,9 @@ angular.module('myApp', [
                 );
 
             //Add auto-open on menu mouse hover
-            $('.dropdown').hover(function(){ 
+            /*$('.dropdown').hover(function(){ 
                 $('.dropdown-toggle', this).trigger('click'); 
-            });
+            });*/
 
 
         },
