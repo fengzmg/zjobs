@@ -55,9 +55,10 @@ def get_jobs():
 @app.route('/menus', methods=['GET','POST'])
 def get_menu():
     menu_items={'menu_items':[]}
-    menu_items['menu_items'].append({'label': 'Run Crawler', 'link': '/admin/run_crawler'})
-    menu_items['menu_items'].append({'label': 'Run Emailer', 'link': '/admin/run_emailer'})
-    menu_items['menu_items'].append({'label': 'Run Housekeeper', 'link': '/admin/run_housekeeper'})
+    menu_items['menu_items'].append({'label': 'Run Crawler', 'link': '/admin/run_crawler', 'menu_item_id':'admin_run_crawler'})
+    menu_items['menu_items'].append({'label': 'Run Emailer', 'link': '/admin/run_emailer', 'menu_item_id':'admin_run_emailer'})
+    menu_items['menu_items'].append({'label': 'Run Housekeeper', 'link': '/admin/run_housekeeper', 'menu_item_id':'admin_run_housekeeper'})
+    menu_items['menu_items'].append({'label': 'Download As Excel', 'link': '/extract/xlsx', 'menu_item_id':'extract_xlsx'})
 
     return json.dumps(menu_items)
 

@@ -38,7 +38,8 @@ angular.module('myApp', [
     var site_urls = {
     'sgxin':'http://www.sgxin.com',
     'shichengbbs':'http://www.shichengbbs.com',
-    'singxin':'http://www.singxin.com'
+    'singxin':'http://www.singxin.com',
+    'sggongzuo': 'http://www.gongzuo.sg'
     }
   return function(source) {
     return $sce.trustAsHtml('<a href="'+ site_urls[source] +'" target="_blank"><img class="siteImage"  src="/static/image/'+source+'_logo.png"/></a>');
@@ -100,6 +101,13 @@ angular.module('myApp', [
     return {
         replace: true,
         controller : function($scope) {
+            $scope.menu_item_classes={
+                'admin_run_crawler':'glyphicon glyphicon-repeat',
+                'admin_run_housekeeper':'glyphicon glyphicon-paperclip',
+                'admin_run_emailer':'glyphicon glyphicon-envelope',
+                'extract_xlsx':'glyphicon glyphicon-floppy-disk'
+            }
+
             $http.get('/menus').success(
                 function(data, status, headers, config){
                     $scope.menu_items = data.menu_items;
@@ -118,15 +126,15 @@ angular.module('myApp', [
 
         },
 
-        /*template: '<span ng-repeat="menu_item in menu_items">[<a href="[[ menu_item.link]]">[[menu_item.label]]</a>]</span>'  */
-
         template: '<div class="dropdown">' +
           '<a class="dropdown-toggle" id="adminMenu" data-toggle="dropdown">' + 
-            'Admin Actions' +
-            '<span class="caret"></span>' +
+            'Actions' +
+            '&nbsp;<span class="glyphicon glyphicon-tasks"></span>' +
           '</a>' +
           '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="adminMenu">' +
-            '<li role="presentation" ng-repeat="menu_item in menu_items"><a role="menuitem" tabindex="-1"href="[[ menu_item.link]]">[[menu_item.label]]</a></li>' +
+            '<li role="presentation" ng-repeat="menu_item in menu_items">' +
+                '<a role="menuitem" tabindex="-1" href="[[ menu_item.link]]"><span class="[[ menu_item_classes[menu_item.menu_item_id] ]]"></span>&nbsp;[[menu_item.label]]</a>'+
+            '</li>' +
           '</ul>' +
         '</div>'
 
