@@ -1,10 +1,9 @@
-
 import os
 from os.path import dirname, realpath
 import sys
-import time
+
 app_home_dir = dirname(dirname(realpath(__file__)))
-sys.path.append(app_home_dir)  ### setup sys path to use the current app modules
+sys.path.append(app_home_dir)  # setup sys path to use the current app modules
 
 import app.config as config
 import pg8000 as dbi
@@ -16,25 +15,23 @@ import datetime
 import time
 
 from apscheduler.triggers.cron import CronTrigger
-
-from apscheduler.executors.pool import ThreadPoolExecutor, ProcessPoolExecutor
-from apscheduler.triggers.cron import CronTrigger
 from apscheduler.schedulers.background import BackgroundScheduler
 
-class Scheduler:   
+
+class Scheduler:
     scheduler = None
+
     @staticmethod
     def get_scheduler():
         if Scheduler.scheduler is None:
-            Scheduler.scheduler= BackgroundScheduler(logger=logger)
+            Scheduler.scheduler = BackgroundScheduler(logger=logger)
             Scheduler.scheduler.start()
-        
+
         return Scheduler.scheduler
 
+
 def create_db():
-    #conn = sqlite3.connect(config.DB_FILE)
     conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
-    #conn = dbi.connect('postgres://zjobs:zjobs@localhost:5432/zjobs')
     try:
         c = conn.cursor()
 
@@ -63,7 +60,6 @@ def create_db():
             CREATE UNIQUE INDEX job_title_idx ON CRAWLED_JOBS(job_title)
         ''')
 
-
         c.execute('DROP TABLE IF EXISTS JOB_REJECTION_RULES')
         c.execute('DROP INDEX IF EXISTS reject_pattern_idx')
 
@@ -79,7 +75,6 @@ def create_db():
         ''')
 
         logger.info("created table and indexes for JOB_REJECTION_RULES")
-       
 
         conn.commit()
         logger.info('done create database')
@@ -88,12 +83,14 @@ def create_db():
         logger.error('Unable to run create_db')
     finally:
         conn.close()
-    
+
+
 def _crawl(spider_name=None):
-        if spider_name:
-            os.system('cd %s && scrapy crawl %s' % (app_home_dir, spider_name))
-            logger.info('Done running spider %s' % spider_name)
-        return None
+    if spider_name:
+        os.system('cd %s && scrapy crawl %s' % (app_home_dir, spider_name))
+        logger.info('Done running spider %s' % spider_name)
+    return None
+
 
 def run_crawler():
     start_time = time.time()
@@ -101,19 +98,23 @@ def run_crawler():
 
     # os.system('python '+ app_home_dir +'/app/run_crawler.py')
     spider_names = ['sgxin', 'shichengbbs', 'singxin', 'sggongzuo']
-    
+
     pool = Pool(processes=len(spider_names))
     pool.map(_crawl, spider_names)
-   
+
     logger.info('done running crawler.. Time elapsed: %.3fs' % (time.time() - start_time))
+
 
 def run_web():
     logger.info('starting web..')
-    os.system('cd '+ app_home_dir +' && gunicorn -c app/gunicorn.conf.py web.jobboard:app --debug')
+    os.system('cd ' + app_home_dir + ' && gunicorn -c app/gunicorn.conf.py web.jobboard:app --debug')
+
 
 def run_flask_web():
     import web.jobboard
+
     web.jobboard.app.run(host='0.0.0.0', port=config.WEB_HTTP_PORT, debug=config.WEB_DEBUG_ENABLED)
+
 
 def run_heartbeater():
     import requests
@@ -123,30 +124,31 @@ def run_heartbeater():
     logger.info('heartbeater received status_code %s', resp.status_code)
     logger.info('done hearting beating')
 
-def run_housekeeper():
 
+def run_housekeeper():
     logger.info('start running housekeeper..')
     JobItem.remove_old_records(retention_days=config.HOUSEKEEPING_RECORD_ORDLER_THAN)
     logger.info('done running housekeeper..')
+
 
 def extract_file_as_bytes(format='xlsx'):
     import xlsxwriter
     import unicodecsv
     import tempfile
 
-    tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix=('.%s' % format), delete=False)).name      
-    
+    tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix=('.%s' % format), delete=False)).name
+
     property_names, rows = JobItem.findall()
     if format.lower() == 'xlsx':
-        workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format':'yyyy-mm-dd'})
+        workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format': 'yyyy-mm-dd'})
         worksheet = workbook.add_worksheet('crawled_jobs')
         worksheet.set_column('A:M', 40)
 
         worksheet.write_row(0, 0, [property_name.upper() for property_name in property_names])
 
         for rowIdx, row in enumerate(rows):
-            worksheet.write_row(rowIdx+1, 0, row)
-        
+            worksheet.write_row(rowIdx + 1, 0, row)
+
         workbook.close()
     elif format.lower() == 'csv':
         with open(tmp_file, 'w') as f:
@@ -157,7 +159,7 @@ def extract_file_as_bytes(format='xlsx'):
     else:
         os.remove(tmp_file)
         raise Exception("'%s' format is not supported" % format)
-    
+
     file_content = open(tmp_file, 'rb').read()
     os.remove(tmp_file)
     return file_content
@@ -187,7 +189,8 @@ def run_emailer():
 
         current_date_string = datetime.datetime.now().strftime('%Y-%m-%d')
         message_subject = "%s:%s" % (config.APP_NAME, current_date_string)
-        message_text = "Thank you for subscribing %s. Please find the newly posted jobs as of %s" % (config.APP_NAME, current_date_string)
+        message_text = "Thank you for subscribing %s. Please find the newly posted jobs as of %s" % (
+            config.APP_NAME, current_date_string)
 
         msg = MIMEMultipart()
         msg['From'] = fromaddr
@@ -200,7 +203,8 @@ def run_emailer():
         part.set_payload(extract_file_as_bytes(file_format))
         logger.info('attached extracted files to the mail...waiting to be sent..')
         Encoders.encode_base64(part)
-        part.add_header('Content-Disposition', 'attachment; filename="extracted_jobs_%s.%s"' % (current_date_string, file_format) )
+        part.add_header('Content-Disposition',
+                        'attachment; filename="extracted_jobs_%s.%s"' % (current_date_string, file_format))
         msg.attach(part)
 
         smtp.sendmail(fromaddr, toaddrs, msg.as_string())
@@ -211,24 +215,25 @@ def run_emailer():
         smtp.quit()
 
 
-
 def run_batch_jobs():
     scheduler = Scheduler.get_scheduler()
     scheduler.add_job(func=run_crawler, trigger=CronTrigger(hour='*/08'))
     scheduler.add_job(func=run_housekeeper, trigger=CronTrigger(hour='23', minute='05'))
     scheduler.add_job(func=run_heartbeater, trigger=CronTrigger(minute='*/30'))
     scheduler.add_job(func=run_emailer, trigger=CronTrigger(hour='23', minute='35'))
-    
+
 
 def run_app():
     run_batch_jobs()
     run_web()
 
+
 def parse_process_args():
     import argparse
+
     parser = argparse.ArgumentParser('run the app component')
-    parser.add_argument('component', nargs='?', default='all', type=str,  
-        help='app component to run. [all|web|flask_web|batch_jobs|crawler|housekeeper|heartbeater|emailer]')
+    parser.add_argument('component', nargs='?', default='all', type=str,
+                        help='app component to run. [all|web|flask_web|batch_jobs|crawler|housekeeper|heartbeater|emailer]')
     args = parser.parse_args()
 
     if args.component is None:
@@ -254,6 +259,7 @@ def parse_process_args():
     else:
         print 'Invalid Usage: '
         parser.print_help()
+
 
 if __name__ == '__main__':
     parse_process_args()

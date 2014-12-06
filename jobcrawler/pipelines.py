@@ -5,13 +5,12 @@
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: http://doc.scrapy.org/en/latest/topics/item-pipeline.html
 import re
-# from pymongo import MongoClient
 from scrapy.exceptions import DropItem
 from scrapy import log
 import app.config as config
 import datetime
 from jobcrawler.items import JobItem
-#import traceback
+# import traceback
 
 
 class ItemPrintingPipeline(object):
@@ -21,11 +20,12 @@ class ItemPrintingPipeline(object):
 
 
 class ItemDuplicationCheckPipeline(object):
-    def process_item(self, item, spider):        
+    def process_item(self, item, spider):
         if JobItem.is_exists(item):
             raise DropItem('Duplicated Job title. Removing...')
         else:
-            return item         
+            return item
+
 
 class ItemRecuritValidationPipeline(object):
     def process_item(self, item, spider):
@@ -46,16 +46,19 @@ class ItemPostedByAgentPipeline(object):
         else:
             raise DropItem('Job is posted by Agent. Removing...')
 
+
 class ItemPublishDateFilterPipeline(object):
     def process_item(self, item, spider):
         publish_date = item.get('publish_date', None)
         if publish_date is None:
             raise DropItem('Job has no publish_date...')
-        
+
         if (datetime.datetime.now() - publish_date).days > int(config.HOUSEKEEPING_RECORD_ORDLER_THAN):
-            raise DropItem('Job is published order than %s days. Removing...' % str(config.HOUSEKEEPING_RECORD_ORDLER_THAN))
-        
+            raise DropItem(
+                'Job is published order than %s days. Removing...' % str(config.HOUSEKEEPING_RECORD_ORDLER_THAN))
+
         return item
+
 
 class ItemSaveToDBPipeline(object):
     def process_item(self, item, spider):
