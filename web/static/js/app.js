@@ -6,8 +6,9 @@ angular.module('myApp', [
   'ngRoute', 'ngSanitize'
 ])
 .config(['$routeProvider', function($routeProvider) {
-    $routeProvider.when('/home', {templateUrl: '/home.html', controller: 'homeController'});
-    $routeProvider.otherwise({redirectTo: '/home'});
+    $routeProvider.when('/jobs', {templateUrl: '/jobs.html', controller: 'jobsController'});
+    $routeProvider.when('/reject_rules', {templateUrl: '/reject_rules.html', controller: 'reject_rulesController'});
+    $routeProvider.otherwise({redirectTo: '/jobs'});
 }])
 .config(function($interpolateProvider) {
     $interpolateProvider.startSymbol('[[');
@@ -105,6 +106,7 @@ angular.module('myApp', [
                 'admin_run_crawler':'glyphicon glyphicon-repeat',
                 'admin_run_housekeeper':'glyphicon glyphicon-paperclip',
                 'admin_run_emailer':'glyphicon glyphicon-envelope',
+                'admin_config_reject_rules': 'glyphicon glyphicon-wrench',
                 'extract_xlsx':'glyphicon glyphicon-floppy-disk'
             }
 
@@ -140,7 +142,23 @@ angular.module('myApp', [
 
     };
 }])
-.controller('homeController', ['$scope','$http', function($scope, $http) {
+.controller('reject_rulesController', ['$scope','$http', function($scope, $http) {
+    $scope.fetchData = function(){
+            $http.post('/reject_rules').success(function(data, status, headers, config){
+                $scope.records=data;
+            }).error(function(data, status, headers, config){
+                alert('Unable to load records');
+            });
+        }
+
+        $scope.refresh = function(){
+            $scope.fetchData();
+        }
+
+        $scope.fetchData();
+
+ }])
+.controller('jobsController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
             $http.post('/jobs', $scope.page_request).success(function(data, status, headers, config){
                 $scope.paged_result = data;

@@ -221,7 +221,8 @@ class RejectionPattern(BaseObject):
                 logger.info('Saved rejection pattern: %s' % self.reject_pattern)
 
                 conn.commit()
-            except:
+            except Exception as e:
+                logger.error(e)
                 conn.rollback()
                 logger.info('Unable to save the rejection pattern: %s' % self.reject_pattern)
                 # raise JobItemDBError('Unable to save the job')

@@ -69,6 +69,8 @@ def get_menu():
     menu_items['menu_items'].append(
         {'label': 'Run Housekeeper', 'link': '/admin/run_housekeeper', 'menu_item_id': 'admin_run_housekeeper'})
     menu_items['menu_items'].append(
+        {'label': 'Config Reject Rules', 'link': '/#/reject_rules', 'menu_item_id': 'admin_config_reject_rules'})
+    menu_items['menu_items'].append(
         {'label': 'Download As Excel', 'link': '/extract/xlsx', 'menu_item_id': 'extract_xlsx'})
 
     return json.dumps(menu_items)
@@ -83,7 +85,7 @@ def extract_as_file(format='xlsx'):
     return response
 
 
-@app.route('/reject_rules', methods=['GET'])
+@app.route('/reject_rules', methods=['GET','POST'])
 def get_reject_rules():
     reject_rule1 = RejectionPattern('something', 'something')
     reject_rule1.save()
