@@ -30,7 +30,7 @@ class BaseSpider(CrawlSpider):
 
             if self.should_load_details(job_crawler_item):
                 requests.append(
-                    Request(url=job_crawler_item.get('job_details_link', ''), callback=self.retrieve_job_details,
+                    Request(url=job_crawler_item.job_details_link, callback=self.retrieve_job_details,
                             meta={'item': job_crawler_item}, dont_filter=True))
 
         return requests
@@ -44,14 +44,14 @@ class BaseSpider(CrawlSpider):
 
     def should_load_details(self, job_item):
         if JobItem.is_exists(job_item):
-            log.msg('[%s] skipping loading details as job already exists. job_title: %s' % (self.name, job_item.get('job_title', '')))
+            log.msg('[%s] skipping loading details as job already exists. job_title: %s' % (self.name, job_item.job_title))
             return False
-        if re.search(config.AGENT_RULE_OUT_PATTERN, job_item.get('job_title', '')):
-            log.msg('[%s] skipping loading details as job is posted by agent. job_title: %s' % (self.name, job_item.get('job_title', '')))
+        if re.search(config.AGENT_RULE_OUT_PATTERN, job_item.job_title):
+            log.msg('[%s] skipping loading details as job is posted by agent. job_title: %s' % (self.name, job_item.job_title))
             return False
 
-        if re.search(config.JOB_RULE_OUT_PATTERN, job_item.get('job_title', '')):
-            log.msg('[%s] skipping loading details as job is invalid. job_title: %s' % (self.name, job_item.get('job_title', '')))
+        if re.search(config.JOB_RULE_OUT_PATTERN, job_item.job_title):
+            log.msg('[%s] skipping loading details as job is invalid. job_title: %s' % (self.name, job_item.job_title))
             return False
 
         return True

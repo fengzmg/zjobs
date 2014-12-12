@@ -138,24 +138,25 @@ def extract_file_as_bytes(format='xlsx'):
 
     tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix=('.%s' % format), delete=False)).name
 
-    property_names, rows = JobItem.findall()
+    job_items = JobItem.findall()
+
     if format.lower() == 'xlsx':
         workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format': 'yyyy-mm-dd'})
         worksheet = workbook.add_worksheet('crawled_jobs')
         worksheet.set_column('A:M', 40)
 
-        worksheet.write_row(0, 0, [property_name.upper() for property_name in property_names])
+        worksheet.write_row(0, 0, [property_name.upper() for property_name in JobItem.property_names])
 
-        for rowIdx, row in enumerate(rows):
-            worksheet.write_row(rowIdx + 1, 0, row)
+        for rowIdx, job_item in enumerate(job_items):
+            worksheet.write_row(rowIdx + 1, 0, [getattr(job_item, property_name) for property_name in JobItem.property_names])
 
         workbook.close()
     elif format.lower() == 'csv':
         with open(tmp_file, 'w') as f:
             writer = unicodecsv.writer(f, encoding='utf-8')
-            writer.writerow([property_name.upper() for property_name in property_names])
-            for row in rows:
-                writer.writerow(row)
+            writer.writerow([property_name.upper() for property_name in JobItem.property_names])
+            for job_item in job_items:
+                writer.writerow([getattr(job_item, property_name) for property_name in JobItem.property_names])
     else:
         os.remove(tmp_file)
         raise Exception("'%s' format is not supported" % format)

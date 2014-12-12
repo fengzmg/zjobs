@@ -4,8 +4,13 @@
 #
 # See documentation in:
 # http://doc.scrapy.org/en/latest/topics/items.html
+try:
+    import simplejson as json
+except ImportError:
+    import json
 
 import scrapy
+from scrapy.item import BaseItem
 
 from app.config import logger
 # import sqlite3 as dbi # uncomment if using sqlite3
@@ -13,11 +18,20 @@ import pg8000 as dbi
 import app.config as config
 
 
-class BaseObject:
+class BaseObject(BaseItem):
     @classmethod
     def connect_db(cls):
         return dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER,
                            password=config.DB_PASSWORD)
+    @classmethod
+    def from_dict(cls, dict_obj):
+        new_obj = cls()
+        for property_name, property_value in dict_obj.iteritems():
+            if hasattr(new_obj, property_name):
+                setattr(new_obj, property_name, property_value)
+
+        return new_obj
+
 
 
 class JobItemDBError(Exception):
@@ -28,24 +42,27 @@ class JobItemDBError(Exception):
         return repr(self.message)
 
 
-class JobItem(scrapy.Item, BaseObject):
-    # define the fields for your item here like:
-    job_title = scrapy.Field()
-    job_desc = scrapy.Field()
-    job_details_link = scrapy.Field()
-    job_location = scrapy.Field()
-    job_country = scrapy.Field()
-    salary = scrapy.Field()
-    employer_name = scrapy.Field()
-    publish_date = scrapy.Field()  # datetime
-    crawled_date = scrapy.Field()
-    contact = scrapy.Field()
-    source = scrapy.Field()
+class JobItem(BaseObject):
+
+    job_title = None
+    job_desc = None
+    job_details_link = None
+    job_location = None
+    job_country = None
+    salary = None
+    employer_name = None
+    publish_date = None  # datetime
+    crawled_date = None
+    contact = None
+    source = None
 
     property_names = ['job_title', 'job_desc', 'job_details_link', 'job_location', 'job_country',
                       'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
 
     table_name = 'CRAWLED_JOBS'
+
+    def __repr__(self):
+        return repr(self.__dict__)
 
     @classmethod
     def save(cls, item=None):
@@ -61,25 +78,25 @@ class JobItem(scrapy.Item, BaseObject):
                           ') '
                           'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
                           (
-                              item.get('job_title', None),
-                              item.get('job_desc', None),
-                              item.get('job_details_link', None),
-                              item.get('job_location', None),
-                              item.get('job_country', None),
-                              item.get('salary', None),
-                              item.get('employer_name', None),
-                              item.get('publish_date', None),
-                              item.get('contact', None),
-                              item.get('source', None),
-                              item.get('crawled_date', None)
+                              item.job_title,
+                              item.job_desc ,
+                              item.job_details_link,
+                              item.job_location,
+                              item.job_country,
+                              item.salary,
+                              item.employer_name,
+                              item.publish_date,
+                              item.contact,
+                              item.source,
+                              item.crawled_date
 
                           ))
-                logger.info('Saved job: %s' % item.get('job_title', '--'))
+                logger.info('Saved job: %s' % item.job_title)
 
                 conn.commit()
             except:
                 conn.rollback()
-                logger.info('Unable to save the job: %s' % item.get('job_title', '--'))
+                logger.info('Unable to save the job: %s' % item.job_title)
                 # raise JobItemDBError('Unable to save the job')
             finally:
                 conn.close()
@@ -88,7 +105,7 @@ class JobItem(scrapy.Item, BaseObject):
     def is_exists(cls, item=None):
 
         if item:
-            job_title = item.get('job_title', None)
+            job_title = item.job_title
 
             if job_title:
                 conn = cls.connect_db()
@@ -120,10 +137,7 @@ class JobItem(scrapy.Item, BaseObject):
 
         try:
             c = conn.cursor()
-            # rows = c.execute('SELECT * FROM ( \
-            # SELECT * FROM CRAWLED_JOBS ORDER BY publish_date DESC \
-            #     ) AS RESULT LIMIT ? OFFSET ?  ', (page_size, page_size*(page_no-1) ) )
-
+           
             if not criteria:
 
                 c.execute('SELECT * FROM ( \
@@ -135,7 +149,7 @@ class JobItem(scrapy.Item, BaseObject):
                         SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
                     ) AS RESULT LIMIT %s OFFSET %s  ', (size, size * (page_no - 1) ))
 
-            return cls.property_names, c.fetchall()
+            return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
         finally:
             conn.close()
 
@@ -146,7 +160,7 @@ class JobItem(scrapy.Item, BaseObject):
             c = conn.cursor()
             c.execute(
                 'SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC')
-            return cls.property_names, c.fetchall()
+            return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
         finally:
             conn.close()
 
@@ -192,14 +206,24 @@ class RejectionPattern(BaseObject):
         self.reject_pattern = reject_pattern
         self.reject_reason = reject_reason
 
-
     @classmethod
     def findall(cls):
         conn = cls.connect_db()
         try:
             c = conn.cursor()
             c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ')
-            return cls.property_names, c.fetchall()
+
+            return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
+        finally:
+            conn.close()
+
+    @classmethod
+    def find(cls, reject_pattern):
+        conn = cls.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE reject_pattern=%s', reject_pattern)
+            return cls.property_names, c.fetchone()
         finally:
             conn.close()
 
@@ -228,6 +252,13 @@ class RejectionPattern(BaseObject):
                 # raise JobItemDBError('Unable to save the job')
             finally:
                 conn.close()
+
+    def __repr__(self):
+        return json.dumps(self.__dict__)
+
+
+
+
 
 
 

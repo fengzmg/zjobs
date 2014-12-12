@@ -24,13 +24,13 @@ class SingxinSpider(BaseSpider):
 
     def populate_job_crawler_item(self, detail_item, job_crawler_item):
         try:
-            job_crawler_item['job_title'] = detail_item.xpath('.//a[@class="title"]/text()').extract()[0]
-            job_crawler_item['job_details_link'] = 'http://www.singxin.com' + detail_item.re(r'<a.*href="(/info/view/id/[0-9]+)">.*</a>')[0]
-            job_crawler_item['job_country'] = 'Singapore'
-            job_crawler_item['job_location'] = 'Singapore'
-            job_crawler_item['contact'] = detail_item.re(r'<a.*href="tel:(.*)">.*</a>')[0]
-            job_crawler_item['source'] = self.name
-            job_crawler_item['crawled_date'] = datetime.datetime.now()
+            job_crawler_item.job_title = detail_item.xpath('.//a[@class="title"]/text()').extract()[0]
+            job_crawler_item.job_details_link = 'http://www.singxin.com' + detail_item.re(r'<a.*href="(/info/view/id/[0-9]+)">.*</a>')[0]
+            job_crawler_item.job_country = 'Singapore'
+            job_crawler_item.job_location = 'Singapore'
+            job_crawler_item.contact = detail_item.re(r'<a.*href="tel:(.*)">.*</a>')[0]
+            job_crawler_item.source = self.name
+            job_crawler_item.crawled_date = datetime.datetime.now()
 
         except Exception as e:
             print e
@@ -40,12 +40,12 @@ class SingxinSpider(BaseSpider):
         job_crawler_item = response.meta['item']
 
         try:
-            job_crawler_item['job_desc'] = response.xpath('/html/head/meta[@name="description"]/@content').extract()[0]
+            job_crawler_item.job_desc = response.xpath('/html/head/meta[@name="description"]/@content').extract()[0]
 
-            job_crawler_item['publish_date'] = response.selector.re('<td><i class="icon-calendar icon-small"></i>(.*)</td>')[0].replace(' ', '')
+            job_crawler_item.publish_date = response.selector.re('<td><i class="icon-calendar icon-small"></i>(.*)</td>')[0].replace(' ', '')
             
             #Convert to the datetime format
-            job_crawler_item['publish_date'] = datetime.datetime.strptime(job_crawler_item.get('publish_date'), '%Y-%m-%d') if job_crawler_item.get('publish_date', None) is not None else None
+            job_crawler_item.publish_date = datetime.datetime.strptime(job_crawler_item.publish_date, '%Y-%m-%d') if job_crawler_item.publish_date is not None else None
         except Exception as e:
             print e
 

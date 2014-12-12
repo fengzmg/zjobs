@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
 import datetime
 
 from flask import Flask, redirect, url_for, make_response
@@ -44,19 +47,18 @@ def get_jobs():
     page_request = request.json
     paged_result = {'page_request': page_request}
 
-    size = int(page_request.get('size', 25))  # convert the string to int
-    page_no = int(page_request.get('page_no', 1))
+    size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
+    page_no = int(page_request.get('page_no', 1)) if page_request else 1
 
-    property_names, results = JobItem.find_with_pagination({'page_no': page_no, 'size': size})
-
-    paged_result['content'] = [dict(zip(property_names, row)) for row in results]
+    paged_result['content'] = JobItem.find_with_pagination({'page_no': page_no, 'size': size})
 
     paged_result['total_count'] = JobItem.count()
 
     paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] / size != 0 else \
         paged_result['total_count'] / size
 
-    return json.dumps(paged_result, default=date_handler)
+
+    return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
 
 
 @app.route('/menus', methods=['GET', 'POST'])
@@ -90,9 +92,11 @@ def get_reject_rules():
     reject_rule1 = RejectionPattern('something', 'something')
     reject_rule1.save()
 
-    property_names, results = RejectionPattern.findall()
-    records = [dict(zip(property_names, row)) for row in results]
-    return json.dumps(records)
+    records = RejectionPattern.findall()
+
+    print records
+
+    return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 
 @app.route('/admin/run_crawler', methods=['GET'])
@@ -113,5 +117,20 @@ def re_run_emailer():
     return redirect(url_for('index'))
 
 
+
+class CustomJsonEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, JobItem):
+            return obj.__dict__
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
+
+        return obj
+
+
 def date_handler(obj):
-    return obj.isoformat() if hasattr(obj, 'isoformat') else obj
+    if obj is not None:
+        return str(obj) if hasattr(obj, 'isoformat') else obj
+    else:
+        return ''

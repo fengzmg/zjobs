@@ -39,15 +39,12 @@ ITEM_PIPELINES = {
     'jobcrawler.pipelines.ItemPostedByAgentPipeline': 2,
     'jobcrawler.pipelines.ItemDuplicationCheckPipeline': 3,
     'jobcrawler.pipelines.ItemPublishDateFilterPipeline': 4,
-    'jobcrawler.pipelines.ItemPrintingPipeline': 5,
-    'jobcrawler.pipelines.ItemSaveToDBPipeline': 6
+    'jobcrawler.pipelines.ItemFieldFormatValidationPipeline': 5,
+    'jobcrawler.pipelines.ItemPrintingPipeline': 6,
+    'jobcrawler.pipelines.ItemSaveToDBPipeline': 7
 }
 
 LOG_LEVEL = 'INFO'
-
-if config.EXPORT_TO_FILE_ENABLED:
-    FEED_FORMAT = 'csv'
-    FEED_URI = 'file://' + config.APP_HOME + '/crawled_jobs_%(name)s.csv'
 
 CONCURRENT_REQUESTS = 200
 COOKIES_ENABLED = False

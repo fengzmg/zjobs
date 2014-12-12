@@ -43,7 +43,7 @@ class SgxinSpider(BaseSpider):
                 if index == 4:
                     if self.should_load_details(job_crawler_item):
                         requests.append(
-                            Request(url=job_crawler_item.get('job_details_link', ''), callback=self.retrieve_job_details,
+                            Request(url=job_crawler_item.job_details_link, callback=self.retrieve_job_details,
                                     meta={'item': job_crawler_item}, dont_filter=True))
 
         return requests
@@ -65,42 +65,40 @@ class SgxinSpider(BaseSpider):
 
         self.populate_job_country(detail_item, job_crawler_item)
 
-        job_crawler_item['source'] = self.name
-        job_crawler_item['crawled_date'] = datetime.datetime.now()
+        job_crawler_item.source = self.name
+        job_crawler_item.crawled_date = datetime.datetime.now()
 
 
     def populate_job_title(self, detail_item, job_crawler_item):
 
-        job_crawler_item['job_title'] = detail_item.re(r'<a.*>(.*)</a>')[0]
-        job_crawler_item['job_details_link'] = 'http://www.sgxin.com/' + detail_item.re(r'<a.*href="(.*)">.*</a>')[0]
+        job_crawler_item.job_title = detail_item.re(r'<a.*>(.*)</a>')[0]
+        job_crawler_item.job_details_link = 'http://www.sgxin.com/' + detail_item.re(r'<a.*href="(.*)">.*</a>')[0]
 
     def populate_salary(self, detail_item, job_crawler_item):
-        job_crawler_item['salary'] = detail_item.xpath('./text()').extract()[0]
+        job_crawler_item.salary = detail_item.xpath('./text()').extract()[0]
 
     def populate_employer_name(self, detail_item, job_crawler_item):
-        job_crawler_item['employer_name'] = detail_item.xpath('./text()').extract()[0]
+        job_crawler_item.employer_name = detail_item.xpath('./text()').extract()[0]
 
     def populate_job_location(self, detail_item, job_crawler_item):
-        job_crawler_item['job_location'] = detail_item.xpath('./text()').extract()[0]
+        job_crawler_item.job_location = detail_item.xpath('./text()').extract()[0]
 
     def populate_job_country(self, detail_item, job_crawler_item):
-        job_crawler_item['job_country'] = 'Singapore'
+        job_crawler_item.job_country = 'Singapore'
 
     def populate_publish_date(self, detail_item, job_crawler_item):
-        job_crawler_item['publish_date'] = detail_item.xpath('./text()').extract()[0]
+        job_crawler_item.publish_date = detail_item.xpath('./text()').extract()[0]
         # Convert to the datetime format
-        job_crawler_item['publish_date'] = datetime.datetime.strptime(
-            datetime.datetime.now().strftime('%Y') + '-' + job_crawler_item.get('publish_date'),
-            '%Y-%m-%d') if job_crawler_item.get('publish_date', None) is not None else None
+        job_crawler_item.publish_date = datetime.datetime.strptime(datetime.datetime.now().strftime('%Y') + '-' + job_crawler_item.publish_date, '%Y-%m-%d') if job_crawler_item.publish_date is not None else None
 
     def retrieve_job_details(self, response):
         job_crawler_item = response.meta['item']
 
         try:
-            job_crawler_item['job_desc'] = \
+            job_crawler_item.job_desc = \
                 response.xpath('//blockquote/p').extract()[0][3:-4].replace('<br>', '\n').replace('<br/>', '\n') #to strip the <p></p>
 
-            job_crawler_item['contact'] = response.xpath('//*[@id="content"]/div/div[2]/span[9]/text()').extract()[0]
+            job_crawler_item.contact = response.xpath('//*[@id="content"]/div/div[2]/span[9]/text()').extract()[0]
         except:
             pass
 
