@@ -218,7 +218,7 @@ def run_emailer():
 
 def run_batch_jobs():
     scheduler = Scheduler.get_scheduler()
-    scheduler.add_job(func=run_crawler, trigger=CronTrigger(hour='*/08'))
+    scheduler.add_job(func=run_crawler, trigger=CronTrigger(hour='*/04'))
     scheduler.add_job(func=run_housekeeper, trigger=CronTrigger(hour='23', minute='05'))
     scheduler.add_job(func=run_heartbeater, trigger=CronTrigger(minute='*/30'))
     scheduler.add_job(func=run_emailer, trigger=CronTrigger(hour='23', minute='35'))

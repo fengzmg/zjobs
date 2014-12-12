@@ -127,10 +127,3 @@ class CustomJsonEncoder(json.JSONEncoder):
             return obj.isoformat()
 
         return obj
-
-
-def date_handler(obj):
-    if obj is not None:
-        return str(obj) if hasattr(obj, 'isoformat') else obj
-    else:
-        return ''
