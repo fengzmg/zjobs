@@ -9,10 +9,10 @@
         <tr ng-repeat="record in records">
             <td>[[ record.reject_pattern ]]</td>
             <td>[[ record.reject_reason ]]</td>
-            <td><span class="glyphicon glyphicon-trash"></span></td>
+            <td><span class="glyphicon glyphicon-trash" ng-click="remove($index)"></span></td>
         </tr>
         <tr>
-            <td colspan="3" class="text-right"><span class="glyphicon glyphicon-plus"></span></td>
+            <td colspan="3" class="text-right"><span class="glyphicon glyphicon-plus" ng-click="add_new()"></span></td>
         </tr>
         </tbody>
     </table>

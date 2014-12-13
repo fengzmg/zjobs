@@ -89,14 +89,17 @@ def extract_as_file(format='xlsx'):
 
 @app.route('/reject_rules', methods=['GET','POST'])
 def get_reject_rules():
-    reject_rule1 = RejectionPattern('something', 'something')
-    reject_rule1.save()
 
     records = RejectionPattern.findall()
 
     print records
 
     return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+@app.route('/reject_rules/add', methods=['POST'])
+def add_reject_rules():
+    reject_pattern = RejectionPattern.from_dict(request.json)
+    reject_pattern.save()
 
 
 @app.route('/admin/run_crawler', methods=['GET'])

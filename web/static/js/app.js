@@ -155,6 +155,15 @@ angular.module('myApp', [
             $scope.fetchData();
         }
 
+        $scope.add_new = function(){
+            $scope.records.push({'reject_pattern': '', 'reject_reason': ''});
+        }
+
+        $scope.remove = function(index){
+            
+            $scope.records.splice(index, 1);  
+        }
+
         $scope.fetchData();
 
  }])
