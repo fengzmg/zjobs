@@ -9,7 +9,7 @@ from scrapy.exceptions import DropItem
 from scrapy import log
 import app.config as config
 import datetime
-from jobcrawler.items import JobItem
+from jobcrawler.items import JobItem, AgentInfo
 # import traceback
 
 
@@ -39,13 +39,17 @@ class ItemRecuritValidationPipeline(object):
 
 class ItemPostedByAgentPipeline(object):
     def process_item(self, item, spider):
+        #check by title
         pattern = config.AGENT_RULE_OUT_PATTERN
         match = re.search(pattern, item.job_title)
-        if match is None:
-            return item
-        else:
-            raise DropItem('Job is posted by Agent. Removing...')
+        if match:
+            raise DropItem('Job is posted by Agent based on job title. Removing...')
 
+        #check by contact
+        if AgentInfo.is_agent_contact(item.contact):
+            raise DropItem('Job is posted by Agent base on job contact. Removing...')
+
+        return item
 
 class ItemPublishDateFilterPipeline(object):
     def process_item(self, item, spider):

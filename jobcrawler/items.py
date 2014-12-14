@@ -23,6 +23,7 @@ class BaseObject(BaseItem):
     def connect_db(cls):
         return dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER,
                            password=config.DB_PASSWORD)
+
     @classmethod
     def from_dict(cls, dict_obj):
         new_obj = cls()
@@ -31,7 +32,6 @@ class BaseObject(BaseItem):
                 setattr(new_obj, property_name, property_value)
 
         return new_obj
-
 
 
 class JobItemDBError(Exception):
@@ -72,14 +72,14 @@ class JobItem(BaseObject):
                 c = conn.cursor()
 
                 c.execute('INSERT INTO ' + cls.table_name +
-                          '('
-                          'job_title, job_desc, job_details_link, job_location, job_country,'
-                          'salary, employer_name, publish_date, contact, source, crawled_date'
-                          ') '
+                          '(' +
+                          'job_title, job_desc, job_details_link, job_location, job_country,' +
+                          'salary, employer_name, publish_date, contact, source, crawled_date' +
+                          ') ' +
                           'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
                           (
                               item.job_title,
-                              item.job_desc ,
+                              item.job_desc,
                               item.job_details_link,
                               item.job_location,
                               item.job_country,
@@ -94,10 +94,10 @@ class JobItem(BaseObject):
                 logger.info('Saved job: %s' % item.job_title)
 
                 conn.commit()
-            except:
+            except Exception as e:
                 conn.rollback()
-                logger.info('Unable to save the job: %s' % item.job_title)
-                # raise JobItemDBError('Unable to save the job')
+                logger.error('Unable to save the job: %s' % item.job_title)
+                logger.error(e)
             finally:
                 conn.close()
 
@@ -111,18 +111,21 @@ class JobItem(BaseObject):
                 conn = cls.connect_db()
                 try:
                     c = conn.cursor()
-                    c.execute("SELECT COUNT(*) FROM " + cls.table_name + " WHERE job_title='%s'" % job_title)
+                    c.execute("SELECT COUNT(*) FROM " + cls.table_name + " WHERE job_title=%s", (job_title,))
                     job_item_count = int(c.fetchone()[0])
                     return job_item_count > 0
-                except:
-                    logger.info('failed to retrieve the item count')
+                except Exception as e:
+                    logger.error('failed to retrieve the item count')
+                    logger.error(e)
                     return False
                 finally:
                     conn.close()
             else:
+                logger.info('item title is None.. hence returning true in is_exist()')
                 return True
 
         else:
+            logger.info('item is None.. hence returning true in is_exist()')
             return True
 
 
@@ -137,14 +140,14 @@ class JobItem(BaseObject):
 
         try:
             c = conn.cursor()
-           
+
             if not criteria:
 
                 c.execute('SELECT * FROM ( \
                         SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
                     ) AS RESULT LIMIT %s OFFSET %s  ', (size, size * (page_no - 1) ))
             else:
-                #TODO need to add the criteria handling
+                # TODO need to add the criteria handling
                 c.execute('SELECT * FROM ( \
                         SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
                     ) AS RESULT LIMIT %s OFFSET %s  ', (size, size * (page_no - 1) ))
@@ -184,12 +187,27 @@ class JobItem(BaseObject):
         conn = cls.connect_db()
         try:
             c = conn.cursor()
-            c.execute("DELETE FROM ' + cls.table_name + ' WHERE publish_date < NOW() - INTERVAL '" + str(
+            c.execute("DELETE FROM " + cls.table_name + " WHERE publish_date < NOW() - INTERVAL '" + str(
                 retention_days) + " days'")
             conn.commit()
-        except:
+        except Exception as e:
             conn.rollback()
-            logger.error('Unable to run the housekeeper')
+            logger.error('Unable to remove the old records')
+            logger.error(e)
+        finally:
+            conn.close()
+
+    @classmethod
+    def remove_agent_records(cls):
+        conn = cls.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute("DELETE FROM " + cls.table_name + " WHERE contact IN (SELECT contact FROM " + AgentInfo.table_name + ")")
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            logger.error('Unable to remove agent records')
+            logger.error(e)
         finally:
             conn.close()
 
@@ -222,7 +240,8 @@ class RejectionPattern(BaseObject):
         conn = cls.connect_db()
         try:
             c = conn.cursor()
-            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE reject_pattern=%s', reject_pattern)
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE reject_pattern=%s',
+                      reject_pattern)
             return cls.property_names, c.fetchone()
         finally:
             conn.close()
@@ -234,9 +253,9 @@ class RejectionPattern(BaseObject):
                 c = conn.cursor()
 
                 c.execute('INSERT INTO ' + self.table_name +
-                          '('
-                          'reject_pattern, reject_reason'
-                          ') '
+                          '(' +
+                          'reject_pattern, reject_reason' +
+                          ') ' +
                           'VALUES (%s, %s)',
                           (
                               self.reject_pattern,
@@ -250,6 +269,87 @@ class RejectionPattern(BaseObject):
                 conn.rollback()
                 logger.info('Unable to save the rejection pattern: %s' % self.reject_pattern)
                 # raise JobItemDBError('Unable to save the job')
+            finally:
+                conn.close()
+
+    def __repr__(self):
+        return json.dumps(self.__dict__)
+
+
+class AgentInfo(BaseObject):
+    property_names = ['contact']
+
+    table_name = 'AGENT_INFOS'
+
+    contact = None
+
+    def __init__(self, contact=None):
+        self.contact = contact
+
+    @classmethod
+    def findall(cls):
+        conn = cls.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ')
+
+            return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
+        finally:
+            conn.close()
+
+    @classmethod
+    def find(cls, contact):
+        conn = cls.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE contact=%s',
+                      contact)
+            return cls.from_dict(dict(zip(cls.property_names, c.fetchone()[0])))
+        except Exception as e:
+            logger.error(e)
+            logger.info('returning None as exception occurs in AgentInfo.find()')
+            return None
+        finally:
+            conn.close()
+
+    @classmethod
+    def is_agent_contact(cls, contact):
+        if contact is None or contact == '':
+            logger.info('returning False as contact is None or Empty in is_agent_contact()')
+            return False
+        conn = cls.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT COUNT(*) FROM ' + cls.table_name + ' WHERE contact=%s', (contact, ))
+            return int(c.fetchone()[0]) > 0
+        except Exception as e:
+            logger.error(e)
+            logger.info('returning False as exception occurs in is_agent_contact()')
+            return False
+        finally:
+            conn.close()
+
+    def save(self):
+        if self:
+            conn = self.connect_db()
+            try:
+                c = conn.cursor()
+
+                c.execute('INSERT INTO ' + self.table_name +
+                          '(' +
+                          'contact' +
+                          ') ' +
+                          'VALUES (%s)',
+                          (
+                              self.contact,
+                          ))
+                logger.info('Saved agent info: %s' % self.contact)
+
+                conn.commit()
+            except Exception as e:
+                logger.error(e)
+                conn.rollback()
+                logger.info('Unable to save the agent_info: %s' % self.contact)
             finally:
                 conn.close()
 

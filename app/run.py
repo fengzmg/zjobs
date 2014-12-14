@@ -76,11 +76,29 @@ def create_db():
 
         logger.info("created table and indexes for JOB_REJECTION_RULES")
 
+        c.execute('DROP TABLE IF EXISTS AGENT_INFOS')
+        c.execute('DROP INDEX IF EXISTS agent_infos_contact_idx')
+
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS AGENT_INFOS(
+                contact    text
+            )
+            ''')
+
+        c.execute('''
+            CREATE UNIQUE INDEX agent_infos_contact_idx ON AGENT_INFOS(contact)
+        ''')
+
+        logger.info("created table and indexes for AGENT_INFOS")
+
+
         conn.commit()
         logger.info('done create database')
-    except:
-        conn.rollback()
+    except Exception as e:
         logger.error('Unable to run create_db')
+        logger.error(e)
+        conn.rollback()
+
     finally:
         conn.close()
 
@@ -127,9 +145,14 @@ def run_heartbeater():
 
 def run_housekeeper():
     logger.info('start running housekeeper..')
+    logger.info('start removing records older than 14 days..')
     JobItem.remove_old_records(retention_days=config.HOUSEKEEPING_RECORD_ORDLER_THAN)
-    logger.info('done running housekeeper..')
+    logger.info('done removing records older than 14 days..')
 
+    logger.info('start removing records posted by agents..')
+    JobItem.remove_agent_records()
+    logger.info('done removing records posted by agents..')
+    logger.info('done running housekeeper..')
 
 def extract_file_as_bytes(format='xlsx'):
     import xlsxwriter

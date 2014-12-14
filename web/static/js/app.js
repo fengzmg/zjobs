@@ -142,6 +142,27 @@ angular.module('myApp', [
 
     };
 }])
+.directive("rightclick", ['$parse', function($parse, $scope) {
+    return {
+        restrict: 'A',
+        transclude: true,
+        scope:{
+            'rightclick': '&rightclick'
+        },
+        link: function(scope, element, attrs) {
+
+                element.bind('contextmenu', function(event) {
+                    var fn = $parse(scope.rightclick); //parse it as function
+                    scope.$apply(function() {
+                        event.stopPropagation();
+                        event.preventDefault();
+                        fn();
+                    });
+                });
+        }
+
+    };
+}])
 .controller('reject_rulesController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
             $http.post('/reject_rules').success(function(data, status, headers, config){
@@ -206,4 +227,14 @@ angular.module('myApp', [
 
         //setup the watch function for the pagination
         $scope.$watch('page_request', $scope.paginationListener, true)
+
+        $scope.markAsAgentContact = function(contact){
+            $http.post('/agent/add', {'contact': contact}).success(
+                function(data, status, headers, config){
+                    alert('Marked ' + contact + ' as agent contact');
+                }
+                ).error(function(data, status, headers, config){
+                    alert('Unable to mark ' + contact + ' as agent contact');    
+                });
+        }
  }]);

@@ -10,7 +10,7 @@ from flask.templating import render_template
 from flask import request
 
 from app.run import run_housekeeper, run_crawler, run_emailer, extract_file_as_bytes, Scheduler
-from jobcrawler.items import JobItem, RejectionPattern
+from jobcrawler.items import JobItem, RejectionPattern, AgentInfo
 
 
 app = Flask(__name__)
@@ -100,6 +100,12 @@ def get_reject_rules():
 def add_reject_rules():
     reject_pattern = RejectionPattern.from_dict(request.json)
     reject_pattern.save()
+
+@app.route('/agent/add', methods=['GET', 'POST'])
+def add_agent():
+    agent = AgentInfo.from_dict(request.json)
+    agent.save()
+    return redirect(url_for('index'))
 
 
 @app.route('/admin/run_crawler', methods=['GET'])
