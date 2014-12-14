@@ -101,9 +101,15 @@ def add_reject_rules():
     reject_pattern = RejectionPattern.from_dict(request.json)
     reject_pattern.save()
 
-@app.route('/agent/add', methods=['GET', 'POST'])
+@app.route('/agents/add', methods=['GET', 'POST'])
 def add_agent():
     agent = AgentInfo.from_dict(request.json)
+    agent.save()
+    return redirect(url_for('index'))
+
+@app.route('/agents/add/<contact>', methods=['GET', 'POST'])
+def add_agent_contact(contact):
+    agent = AgentInfo(contact=contact)
     agent.save()
     return redirect(url_for('index'))
 

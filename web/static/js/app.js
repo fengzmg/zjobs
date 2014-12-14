@@ -163,6 +163,43 @@ angular.module('myApp', [
 
     };
 }])
+.directive("contextmenu", function($parse, $timeout) {
+    return {
+        restrict: 'A',
+        link: function(scope, element, attrs) {
+
+            //give some time for angular to render the html
+            $timeout(function(){
+                //alert(element.html());
+                var template='<div class="dropdown">' +
+                      '<div class="dropdown-toggle" id="dropdownContextMenu" data-toggle="dropdown" aria-expanded="true">' + 
+                        element.html() +
+                      '</div>' +
+                      '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownContextMenu">' +
+                        '<li role="presentation">' +
+                            '<a role="menuitem" tabindex="-1" href="/agents/add/9999999"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Mark as Agent</a>'+
+                        '</li>' +
+                      '</ul>' +
+                    '</div>';
+
+                jQuery(element).html(template); 
+            }, 100);
+
+            element.bind('contextmenu', function(event) {
+                
+                scope.$apply(function() {
+                    event.stopPropagation();
+                    event.preventDefault();
+                    //alert('rightclicked');
+                    jQuery('.dropdown-toggle', element).dropdown('toggle');
+                });
+            });
+
+            
+        }
+
+    };
+})
 .controller('reject_rulesController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
             $http.post('/reject_rules').success(function(data, status, headers, config){
@@ -229,7 +266,8 @@ angular.module('myApp', [
         $scope.$watch('page_request', $scope.paginationListener, true)
 
         $scope.markAsAgentContact = function(contact){
-            $http.post('/agent/add', {'contact': contact}).success(
+            alert(contact);
+            $http.post('/agents/add', {'contact': contact}).success(
                 function(data, status, headers, config){
                     alert('Marked ' + contact + ' as agent contact');
                 }

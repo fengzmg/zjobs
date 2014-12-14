@@ -13,7 +13,8 @@
             <td><span ng-bind-html="job.source | displayAsIcon"></span></td>
             <td><a href="[[job.job_details_link]]" target="_blank" tooltip title="[[ job.job_desc ]]" >[[ job.job_title ]]</a></td>
             <td>[[ job.job_location ]]</td></td>
-            <td><span ng-bind-html="job.contact | displayAsPhoneLink" rightclick="markAsAgentContact(job.contact)"></span></td>
+            <!-- <td><span ng-bind-html="job.contact | displayAsPhoneLink" rightclick="markAsAgentContact(job.contact)"></span></td> -->
+            <td><span ng-bind-html="job.contact | displayAsPhoneLink" contextmenu="[{'label': 'Mark as agent', 'action': markAsAgentContact(job.contact)]"></span></td>
             <td>[[ job.publish_date | limitTo:10 ]]</td>
         </tr>
         </tbody>
