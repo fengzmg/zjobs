@@ -109,7 +109,7 @@ def add_agent_contact(contact):
     agent = AgentInfo(contact=contact)
     agent.save()
     # schedule a job to purge the agent records
-    Scheduler.get_scheduler().add_job(func=run_housekeeper)
+    # Scheduler.get_scheduler().add_job(func=run_housekeeper)
     return redirect(url_for('index'))
 
 @app.route('/agents', methods=['GET', 'POST'])
