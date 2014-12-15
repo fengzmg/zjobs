@@ -108,9 +108,11 @@ def add_agent():
 def add_agent_contact(contact):
     agent = AgentInfo(contact=contact)
     agent.save()
+    # schedule a job to purge the agent records
+    Scheduler.get_scheduler().add_job(func=run_housekeeper)
     return redirect(url_for('index'))
 
-@app.route('/agents', methods=['GET','POST'])
+@app.route('/agents', methods=['GET', 'POST'])
 def get_agents():
     records = AgentInfo.findall()
     return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)

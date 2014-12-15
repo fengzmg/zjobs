@@ -81,7 +81,7 @@ angular.module('myApp', [
         }
     };
 })
-.directive("loadingindicator", ['$rootScope', function($rootScope) {
+.directive("loadingIndicator", ['$rootScope', function($rootScope) {
     return {
         replace: true,
         controller : function($rootScope) {
@@ -119,12 +119,6 @@ angular.module('myApp', [
                         alert('Cannot load menu');
                     }                   
                 );
-
-            //Add auto-open on menu mouse hover
-            /*$('.dropdown').hover(function(){ 
-                $('.dropdown-toggle', this).trigger('click'); 
-            });*/
-
 
         },
 
@@ -286,14 +280,15 @@ angular.module('myApp', [
 
     $scope.isAgentContact = function(contact){
 
+        var isFound = false;
         angular.forEach($scope.agents, function(item, index){
-            console.log('contact is ' + contact + '; item.contact is ' + item.contact + ";");
-            if(item.contact.trim() == contact.trim()){
-                return true;
+
+            if( contact === item.contact ){
+                isFound = true;
             }
         });
 
-        return false;
+        return isFound;
     }
 
     $scope.loadAgents();
