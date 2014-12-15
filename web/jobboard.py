@@ -91,9 +91,6 @@ def extract_as_file(format='xlsx'):
 def get_reject_rules():
 
     records = RejectionPattern.findall()
-
-    print records
-
     return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 @app.route('/reject_rules/add', methods=['POST'])
@@ -113,6 +110,10 @@ def add_agent_contact(contact):
     agent.save()
     return redirect(url_for('index'))
 
+@app.route('/agents', methods=['GET','POST'])
+def get_agents():
+    records = AgentInfo.findall()
+    return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():

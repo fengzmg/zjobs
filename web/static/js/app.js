@@ -163,21 +163,22 @@ angular.module('myApp', [
 
     };
 }])
-.directive("contextmenu", function($parse, $timeout) {
+.directive("contactContextmenu", function($parse, $timeout) {
     return {
         restrict: 'A',
         link: function(scope, element, attrs) {
 
             //give some time for angular to render the html
             $timeout(function(){
-                //alert(element.html());
+                var contact = jQuery('a', element).text();
+
                 var template='<div class="dropdown">' +
                       '<div class="dropdown-toggle" id="dropdownContextMenu" data-toggle="dropdown" aria-expanded="true">' + 
                         element.html() +
                       '</div>' +
                       '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownContextMenu">' +
                         '<li role="presentation">' +
-                            '<a role="menuitem" tabindex="-1" href="/agents/add/9999999"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Mark as Agent</a>'+
+                            '<a role="menuitem" tabindex="-1" href="/agents/add/'+ contact +'"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Mark as Agent</a>'+
                         '</li>' +
                       '</ul>' +
                     '</div>';
@@ -190,7 +191,6 @@ angular.module('myApp', [
                 scope.$apply(function() {
                     event.stopPropagation();
                     event.preventDefault();
-                    //alert('rightclicked');
                     jQuery('.dropdown-toggle', element).dropdown('toggle');
                 });
             });
@@ -202,77 +202,99 @@ angular.module('myApp', [
 })
 .controller('reject_rulesController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
-            $http.post('/reject_rules').success(function(data, status, headers, config){
-                $scope.records=data;
-            }).error(function(data, status, headers, config){
-                alert('Unable to load records');
-            });
-        }
+        $http.post('/reject_rules').success(function(data, status, headers, config){
+            $scope.records=data;
+        }).error(function(data, status, headers, config){
+            alert('Unable to load records');
+        });
+    }
 
-        $scope.refresh = function(){
-            $scope.fetchData();
-        }
-
-        $scope.add_new = function(){
-            $scope.records.push({'reject_pattern': '', 'reject_reason': ''});
-        }
-
-        $scope.remove = function(index){
-            
-            $scope.records.splice(index, 1);  
-        }
-
+    $scope.refresh = function(){
         $scope.fetchData();
+    }
+
+    $scope.add_new = function(){
+        $scope.records.push({'reject_pattern': '', 'reject_reason': ''});
+    }
+
+    $scope.remove = function(index){
+
+        $scope.records.splice(index, 1);
+    }
+
+    $scope.fetchData();
 
  }])
 .controller('jobsController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
-            $http.post('/jobs', $scope.page_request).success(function(data, status, headers, config){
-                $scope.paged_result = data;
-                $scope.jobs=data.content;
-            }).error(function(data, status, headers, config){
-                alert('Unable to load jobs');
+        $http.post('/jobs', $scope.page_request).success(function(data, status, headers, config){
+            $scope.paged_result = data;
+            $scope.jobs=data.content;
+        }).error(function(data, status, headers, config){
+            alert('Unable to load jobs');
+        });
+    }
+
+    $scope.refresh = function(){
+        $scope.fetchData();
+    }
+
+    $scope.page_request = {
+        'page_no': 1,
+        'size': 25,
+    }
+
+    $scope.page_size_options = [25, 50, 100]
+
+    $scope.paginationListener = function(newVal, oldValue){
+        $scope.fetchData();
+    }
+
+    $scope.toPreviousPage = function(){
+        if($scope.page_request.page_no > 1){
+            $scope.page_request.page_no = $scope.page_request.page_no - 1;
+        }
+    }
+
+    $scope.toNextPage = function(){
+        if($scope.page_request.page_no < $scope.paged_result.total_pages){
+            $scope.page_request.page_no = $scope.page_request.page_no + 1;
+        }
+    }
+
+    //setup the watch function for the pagination
+    $scope.$watch('page_request', $scope.paginationListener, true)
+
+    $scope.markAsAgentContact = function(contact){
+        alert(contact);
+        $http.post('/agents/add', {'contact': contact}).success(
+            function(data, status, headers, config){
+                alert('Marked ' + contact + ' as agent contact');
+            }
+            ).error(function(data, status, headers, config){
+                alert('Unable to mark ' + contact + ' as agent contact');
             });
-        }
+    }
 
-        $scope.refresh = function(){
-            $scope.fetchData();
-        }
+    $scope.loadAgents = function(){
+        $http.get('/agents').success(function(data, status, headers, config){
+            $scope.agents = data;
+        }).error(function(data, status, headers, config){
+            alert('Unable to load agents list');
+        });
+    }
 
-        $scope.page_request = {
-            'page_no': 1,
-            'size': 25,
-        }
+    $scope.isAgentContact = function(contact){
 
-        $scope.page_size_options = [25, 50, 100]
-
-        $scope.paginationListener = function(newVal, oldValue){
-            $scope.fetchData();
-        }
-
-        $scope.toPreviousPage = function(){
-            if($scope.page_request.page_no > 1){
-                $scope.page_request.page_no = $scope.page_request.page_no - 1;   
+        angular.forEach($scope.agents, function(item, index){
+            console.log('contact is ' + contact + '; item.contact is ' + item.contact + ";");
+            if(item.contact.trim() == contact.trim()){
+                return true;
             }
-        }
+        });
 
-        $scope.toNextPage = function(){
-            if($scope.page_request.page_no < $scope.paged_result.total_pages){
-                $scope.page_request.page_no = $scope.page_request.page_no + 1;       
-            }
-        }
+        return false;
+    }
 
-        //setup the watch function for the pagination
-        $scope.$watch('page_request', $scope.paginationListener, true)
-
-        $scope.markAsAgentContact = function(contact){
-            alert(contact);
-            $http.post('/agents/add', {'contact': contact}).success(
-                function(data, status, headers, config){
-                    alert('Marked ' + contact + ' as agent contact');
-                }
-                ).error(function(data, status, headers, config){
-                    alert('Unable to mark ' + contact + ' as agent contact');    
-                });
-        }
+    $scope.loadAgents();
  }]);
