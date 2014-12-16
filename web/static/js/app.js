@@ -8,6 +8,7 @@ angular.module('myApp', [
 .config(['$routeProvider', function($routeProvider) {
     $routeProvider.when('/jobs', {templateUrl: '/jobs.html', controller: 'jobsController'});
     $routeProvider.when('/reject_rules', {templateUrl: '/reject_rules.html', controller: 'reject_rulesController'});
+    $routeProvider.when('/blocked_contacts', {templateUrl: '/blocked_contacts.html', controller: 'blocked_contactsController'});
     $routeProvider.otherwise({redirectTo: '/jobs'});
 }])
 .config(function($interpolateProvider) {
@@ -107,6 +108,7 @@ angular.module('myApp', [
                 'admin_run_housekeeper':'glyphicon glyphicon-paperclip',
                 'admin_run_emailer':'glyphicon glyphicon-envelope',
                 'admin_config_reject_rules': 'glyphicon glyphicon-wrench',
+                'admin_config_blocked_contacts': 'glyphicon glyphicon-wrench',
                 'extract_xlsx':'glyphicon glyphicon-floppy-disk'
             }
 
@@ -214,6 +216,45 @@ angular.module('myApp', [
     $scope.remove = function(index){
 
         $scope.records.splice(index, 1);
+    }
+
+    $scope.fetchData();
+
+ }])
+ .controller('blocked_contactsController', ['$scope','$http', function($scope, $http) {
+    $scope.fetchData = function(){
+        $http.post('/blocked_contacts').success(function(data, status, headers, config){
+            $scope.records=data;
+        }).error(function(data, status, headers, config){
+            alert('Unable to load records');
+        });
+    }
+
+    $scope.refresh = function(){
+        $scope.fetchData();
+    }
+
+    $scope.add_new = function(){
+        $scope.records.push({'contact': '', 'is_new': true});
+    }
+
+    $scope.save = function(record){
+        $http.post('/blocked_contacts/add', record).success(function(data, status, headers, config){
+            record.is_new = false;
+        }).error(function(data, status, headers, config){
+            alert('Cannot save record');
+        });
+    }
+
+    $scope.remove = function(index){
+        var record = $scope.records[index];
+        $http.post('/blocked_contacts/remove', record).success(function(data, status, headers, config){
+            $scope.records.splice(index, 1);
+        }).error(function(data, status, headers, config){
+            alert('Cannot remove record');
+        });
+
+
     }
 
     $scope.fetchData();

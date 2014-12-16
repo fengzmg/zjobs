@@ -73,6 +73,8 @@ def get_menu():
     menu_items['menu_items'].append(
         {'label': 'Config Reject Rules', 'link': '/#/reject_rules', 'menu_item_id': 'admin_config_reject_rules'})
     menu_items['menu_items'].append(
+        {'label': 'Config Blocked Contacts', 'link': '/#/blocked_contacts', 'menu_item_id': 'admin_config_blocked_contacts'})
+    menu_items['menu_items'].append(
         {'label': 'Download As Excel', 'link': '/extract/xlsx', 'menu_item_id': 'extract_xlsx'})
 
     return json.dumps(menu_items)
@@ -100,9 +102,9 @@ def add_reject_rules():
 
 @app.route('/blocked_contacts/add', methods=['POST'])
 def add_blocked_contact():
-    agent = BlockedContact.from_dict(request.json)
-    agent.save()
-    return redirect(url_for('index'))
+    blocked_contact = BlockedContact.from_dict(request.json)
+    blocked_contact.save()
+    return "OK"
 
 @app.route('/blocked_contacts/add/<contact>', methods=['GET'])
 def add_blocked_contact_url(contact):
@@ -111,6 +113,20 @@ def add_blocked_contact_url(contact):
     # schedule a job to purge the agent records
     # Scheduler.get_scheduler().add_job(func=run_housekeeper)
     return redirect(url_for('index'))
+
+@app.route('/blocked_contacts/remove', methods=['POST'])
+def remove_blocked_contact():
+    try:
+        blocked_contact = BlockedContact.from_dict(request.json)
+        blocked_contact.remove()
+    except Exception as e:
+        app.logger.error(e)
+        response = make_response()
+        response.status = 'internal error'
+        response.status_code = 500
+        return response
+
+    return "OK"
 
 @app.route('/blocked_contacts', methods=['GET', 'POST'])
 def get_agents():

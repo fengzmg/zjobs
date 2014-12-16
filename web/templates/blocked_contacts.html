@@ -1,0 +1,21 @@
+<div>
+    <table class="table table-bordered table-striped table-hover" style="width:50%">
+        <thead>
+        <tr>
+            <th>Blocked Contact</th><th>Block Reason</th><th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="record in records">
+            <td ng-if="!record.is_new">[[ record.contact ]]</td>
+            <td ng-if="record.is_new"><input type="text" ng-model="record.contact"/></td>
+            <td></td>
+            <td ng-if="!record.is_new"><span class="glyphicon glyphicon-trash inline_icon_btn" ng-click="remove($index)"></span></td>
+            <td ng-if="record.is_new"><span class="glyphicon glyphicon-floppy-disk inline_icon_btn" ng-click="save(record)"></span></td>
+        </tr>
+        <tr>
+            <td colspan="3" class="text-right"><span class="glyphicon glyphicon-plus inline_icon_btn" ng-click="add_new()"></span></td>
+        </tr>
+        </tbody>
+    </table>
+</div>

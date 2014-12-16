@@ -351,6 +351,20 @@ class BlockedContact(BaseObject):
         finally:
             conn.close()
 
+    def remove(self):
+        conn = self.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('DELETE FROM ' + self.table_name + ' WHERE contact=%s', (self.contact, ))
+            conn.commit()
+            logger.info('Removed blocked contact: ' + self.contact)
+        except Exception as e:
+            logger.error(e)
+            logger.error('Unable to remove blocked contact: ' + self.contact)
+            raise JobItemDBError(str(e))
+        finally:
+            conn.close()
+
     def save(self):
         if self:
             conn = self.connect_db()
@@ -365,9 +379,10 @@ class BlockedContact(BaseObject):
                           (
                               self.contact,
                           ))
-                logger.info('Saved BlockedContact: %s' % self.contact)
 
                 conn.commit()
+                logger.info('Saved BlockedContact: %s' % self.contact)
+
             except Exception as e:
                 logger.error(e)
                 conn.rollback()
@@ -377,6 +392,8 @@ class BlockedContact(BaseObject):
 
     def __repr__(self):
         return json.dumps(self.__dict__)
+
+
 
 
 
