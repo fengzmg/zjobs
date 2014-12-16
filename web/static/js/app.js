@@ -240,18 +240,27 @@ angular.module('myApp', [
 
     $scope.page_size_options = [25, 50, 100]
 
-    $scope.paginationListener = function(newVal, oldValue){
-        $scope.fetchData();
+    $scope.paginationListener = function(newPageRequest, oldPageRequest){
+
+        if(newPageRequest.page_no > 0 ){
+            $scope.fetchData();
+        }
     }
 
     $scope.toPreviousPage = function(){
-        if($scope.page_request.page_no > 1){
+        $scope.page_request.page_no = parseInt($scope.page_request.page_no);
+        var current_page_no = $scope.page_request.page_no;
+
+        if(current_page_no > 1){
             $scope.page_request.page_no = $scope.page_request.page_no - 1;
         }
     }
 
     $scope.toNextPage = function(){
-        if($scope.page_request.page_no < $scope.paged_result.total_pages){
+        $scope.page_request.page_no = parseInt($scope.page_request.page_no);
+        var current_page_no = $scope.page_request.page_no;
+
+        if( current_page_no < $scope.paged_result.total_pages){
             $scope.page_request.page_no = $scope.page_request.page_no + 1;
         }
     }

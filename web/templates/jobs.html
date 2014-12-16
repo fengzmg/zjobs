@@ -14,7 +14,7 @@
             <td><a href="[[job.job_details_link]]" target="_blank" tooltip title="[[ job.job_desc ]]" >[[ job.job_title ]]</a></td>
             <td>[[ job.job_location ]]</td></td>
             <!-- <td><span ng-bind-html="job.contact | displayAsPhoneLink" rightclick="markAsAgentContact(job.contact)"></span></td> -->
-            <td>
+            <td style="min-width:150px;">
                 <span ng-bind-html="job.contact | displayAsPhoneLink" contact-contextmenu style="display:inline-block;"></span>
                 &nbsp;
                 <span ng-if="isAgentContact(job.contact)" class="glyphicon glyphicon-warning-sign" style="display:inline-block;"></span>
