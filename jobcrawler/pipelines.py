@@ -9,7 +9,7 @@ from scrapy.exceptions import DropItem
 from scrapy import log
 import app.config as config
 import datetime
-from jobcrawler.items import JobItem, AgentInfo
+from jobcrawler.items import JobItem, BlockedContact
 # import traceback
 
 
@@ -39,25 +39,22 @@ class ItemRecuritValidationPipeline(object):
 
 class ItemPostedByAgentPipeline(object):
     def process_item(self, item, spider):
-        #check by title
+        # check by title
         pattern = config.AGENT_RULE_OUT_PATTERN
         match = re.search(pattern, item.job_title)
         if match:
             raise DropItem('Job is posted by Agent based on job title. Removing...')
 
-        #check by contact
-        if AgentInfo.is_agent_contact(item.contact):
-            raise DropItem('Job is posted by Agent base on job contact. Removing...')
+        # check by contact
+        if BlockedContact.is_contact_blocked(item.contact):
+            raise DropItem('Job is posted by blocked contact. Removing...')
 
         return item
 
 class ItemPublishDateFilterPipeline(object):
     def process_item(self, item, spider):
-        publish_date = item.publish_date
-        if publish_date is None:
-            raise DropItem('Job has no publish_date...')
 
-        if (datetime.datetime.now() - publish_date).days > int(config.HOUSEKEEPING_RECORD_ORDLER_THAN):
+        if JobItem.is_older_required(item):
             raise DropItem(
                 'Job is published order than %s days. Removing...' % str(config.HOUSEKEEPING_RECORD_ORDLER_THAN))
 
@@ -68,7 +65,7 @@ class ItemFieldFormatValidationPipeline(object):
 
         # validate the contact format
         if not re.match(r"[0-9]+", item.contact):
-            item.contact = '' #set the contact to empty
+            item.contact = ''  # set the contact to empty
 
         return item
 

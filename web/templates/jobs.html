@@ -17,7 +17,7 @@
             <td style="min-width:150px;">
                 <span ng-bind-html="job.contact | displayAsPhoneLink" contact-contextmenu style="display:inline-block;"></span>
                 &nbsp;
-                <span ng-if="isAgentContact(job.contact)" class="glyphicon glyphicon-warning-sign" style="display:inline-block;"></span>
+                <span ng-if="isContactBlocked(job.contact)" class="glyphicon glyphicon-warning-sign" style="display:inline-block;"></span>
             </td>
             <td>[[ job.publish_date | limitTo:10 ]]</td>
         </tr>

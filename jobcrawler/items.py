@@ -4,6 +4,8 @@
 #
 # See documentation in:
 # http://doc.scrapy.org/en/latest/topics/items.html
+import datetime
+
 try:
     import simplejson as json
 except ImportError:
@@ -43,7 +45,6 @@ class JobItemDBError(Exception):
 
 
 class JobItem(BaseObject):
-
     job_title = None
     job_desc = None
     job_details_link = None
@@ -128,6 +129,26 @@ class JobItem(BaseObject):
             logger.info('item is None.. hence returning true in is_exist()')
             return True
 
+    @classmethod
+    def is_older_required(cls, item=None):
+        if item:
+            publish_date = item.publish_date
+            try:
+                if publish_date is None:
+                    logger.info('publish_date is None.. hence returning true in is_older_required()')
+                    return True
+
+                if (datetime.datetime.now() - publish_date).days > int(config.HOUSEKEEPING_RECORD_ORDLER_THAN):
+                    return True
+            except Exception as e:
+                logger.warn('error while calculating the date difference..')
+                logger.warn(e)
+                return False
+
+            return False
+        else:
+            logger.info('item is None.. hence returning true in is_older_required()')
+            return True
 
     @classmethod
     def find_with_pagination(cls, page_request={'page_no': 1, 'size': 25, 'criteria': None}):
@@ -202,7 +223,8 @@ class JobItem(BaseObject):
         conn = cls.connect_db()
         try:
             c = conn.cursor()
-            c.execute("DELETE FROM " + cls.table_name + " WHERE contact IN (SELECT contact FROM " + AgentInfo.table_name + ")")
+            c.execute(
+                "DELETE FROM " + cls.table_name + " WHERE contact IN (SELECT contact FROM " + BlockedContact.table_name + ")")
             conn.commit()
         except Exception as e:
             conn.rollback()
@@ -276,10 +298,10 @@ class RejectionPattern(BaseObject):
         return json.dumps(self.__dict__)
 
 
-class AgentInfo(BaseObject):
+class BlockedContact(BaseObject):
     property_names = ['contact']
 
-    table_name = 'AGENT_INFOS'
+    table_name = 'BLOCKED_CONTACTS'
 
     contact = None
 
@@ -307,15 +329,15 @@ class AgentInfo(BaseObject):
             return cls.from_dict(dict(zip(cls.property_names, c.fetchone()[0])))
         except Exception as e:
             logger.error(e)
-            logger.info('returning None as exception occurs in AgentInfo.find()')
+            logger.info('returning None as exception occurs in BlockedContact.find()')
             return None
         finally:
             conn.close()
 
     @classmethod
-    def is_agent_contact(cls, contact):
+    def is_contact_blocked(cls, contact):
         if contact is None or contact == '':
-            logger.info('returning False as contact is None or Empty in is_agent_contact()')
+            logger.info('returning False as contact is None or Empty in is_contact_blocked()')
             return False
         conn = cls.connect_db()
         try:
@@ -324,7 +346,7 @@ class AgentInfo(BaseObject):
             return int(c.fetchone()[0]) > 0
         except Exception as e:
             logger.error(e)
-            logger.info('returning False as exception occurs in is_agent_contact()')
+            logger.info('returning False as exception occurs in is_contact_blocked()')
             return False
         finally:
             conn.close()
@@ -343,13 +365,13 @@ class AgentInfo(BaseObject):
                           (
                               self.contact,
                           ))
-                logger.info('Saved agent info: %s' % self.contact)
+                logger.info('Saved BlockedContact: %s' % self.contact)
 
                 conn.commit()
             except Exception as e:
                 logger.error(e)
                 conn.rollback()
-                logger.info('Unable to save the agent_info: %s' % self.contact)
+                logger.info('Unable to save the BlockedContact: %s' % self.contact)
             finally:
                 conn.close()
 

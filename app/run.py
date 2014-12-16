@@ -76,20 +76,20 @@ def create_db():
 
         logger.info("created table and indexes for JOB_REJECTION_RULES")
 
-        c.execute('DROP TABLE IF EXISTS AGENT_INFOS')
-        c.execute('DROP INDEX IF EXISTS agent_infos_contact_idx')
+        c.execute('DROP TABLE IF EXISTS BLOCKED_CONTACTS')
+        c.execute('DROP INDEX IF EXISTS blocked_contacts_idx')
 
         c.execute('''
-            CREATE TABLE IF NOT EXISTS AGENT_INFOS(
+            CREATE TABLE IF NOT EXISTS BLOCKED_CONTACTS(
                 contact    text
             )
             ''')
 
         c.execute('''
-            CREATE UNIQUE INDEX agent_infos_contact_idx ON AGENT_INFOS(contact)
+            CREATE UNIQUE INDEX blocked_contacts_idx ON BLOCKED_CONTACTS(contact)
         ''')
 
-        logger.info("created table and indexes for AGENT_INFOS")
+        logger.info("created table and indexes for BLOCKED_CONTACTS")
 
 
         conn.commit()
@@ -101,6 +101,33 @@ def create_db():
 
     finally:
         conn.close()
+
+def migrate_db():
+    """
+    place holder for putting the migrate db scripts -- need to be updated before every release
+    :return:
+    """
+    conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+    try:
+        c = conn.cursor()
+        logger.info('start migrating database')
+
+        c.execute('DROP TABLE IF EXISTS AGENT_INFOS')
+        c.execute('DROP INDEX IF EXISTS agent_infos_contact_idx')
+
+        conn.commit()
+        logger.info('done migrating database')
+
+        create_db()
+
+    except Exception as e:
+        logger.error('Unable to run migrate_db')
+        logger.error(e)
+        conn.rollback()
+
+    finally:
+        conn.close()
+
 
 
 def _crawl(spider_name=None):
@@ -257,7 +284,7 @@ def parse_process_args():
 
     parser = argparse.ArgumentParser('run the app component')
     parser.add_argument('component', nargs='?', default='all', type=str,
-                        help='app component to run. [all|web|flask_web|batch_jobs|crawler|housekeeper|heartbeater|emailer]')
+                        help='app component to run. [all|web|flask_web|batch_jobs|crawler|housekeeper|heartbeater|emailer|migrate_db]')
     args = parser.parse_args()
 
     if args.component is None:
@@ -276,8 +303,8 @@ def parse_process_args():
         run_web()
     elif args.component == 'flask_web':
         run_flask_web()
-    elif args.component == 'create_db':
-        create_db()
+    elif args.component == 'migrate_db':
+        migrate_db()
     elif args.component == 'emailer':
         run_emailer()
     else:

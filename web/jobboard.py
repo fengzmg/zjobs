@@ -10,7 +10,7 @@ from flask.templating import render_template
 from flask import request
 
 from app.run import run_housekeeper, run_crawler, run_emailer, extract_file_as_bytes, Scheduler
-from jobcrawler.items import JobItem, RejectionPattern, AgentInfo
+from jobcrawler.items import JobItem, RejectionPattern, BlockedContact
 
 
 app = Flask(__name__)
@@ -98,23 +98,23 @@ def add_reject_rules():
     reject_pattern = RejectionPattern.from_dict(request.json)
     reject_pattern.save()
 
-@app.route('/agents/add', methods=['GET', 'POST'])
-def add_agent():
-    agent = AgentInfo.from_dict(request.json)
+@app.route('/blocked_contacts/add', methods=['POST'])
+def add_blocked_contact():
+    agent = BlockedContact.from_dict(request.json)
     agent.save()
     return redirect(url_for('index'))
 
-@app.route('/agents/add/<contact>', methods=['GET', 'POST'])
-def add_agent_contact(contact):
-    agent = AgentInfo(contact=contact)
-    agent.save()
+@app.route('/blocked_contacts/add/<contact>', methods=['GET'])
+def add_blocked_contact_url(contact):
+    blocked_contact = BlockedContact(contact=contact)
+    blocked_contact.save()
     # schedule a job to purge the agent records
     # Scheduler.get_scheduler().add_job(func=run_housekeeper)
     return redirect(url_for('index'))
 
-@app.route('/agents', methods=['GET', 'POST'])
+@app.route('/blocked_contacts', methods=['GET', 'POST'])
 def get_agents():
-    records = AgentInfo.findall()
+    records = BlockedContact.findall()
     return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 @app.route('/admin/run_crawler', methods=['GET'])

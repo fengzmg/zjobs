@@ -172,7 +172,7 @@ angular.module('myApp', [
                       '</div>' +
                       '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownContextMenu">' +
                         '<li role="presentation">' +
-                            '<a role="menuitem" tabindex="-1" href="/agents/add/'+ contact +'"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Mark as Agent</a>'+
+                            '<a role="menuitem" tabindex="-1" href="/blocked_contacts/add/'+ contact +'"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Mark as Agent</a>'+
                         '</li>' +
                       '</ul>' +
                     '</div>';
@@ -279,26 +279,26 @@ angular.module('myApp', [
             });
     }
 
-    $scope.loadAgents = function(){
-        $http.get('/agents').success(function(data, status, headers, config){
+    $scope.loadBlockedContacts = function(){
+        $http.get('/blocked_contacts').success(function(data, status, headers, config){
             $scope.agents = data;
         }).error(function(data, status, headers, config){
             alert('Unable to load agents list');
         });
     }
 
-    $scope.isAgentContact = function(contact){
+    $scope.isContactBlocked = function(contact){
 
-        var isFound = false;
+        var isBlocked = false;
         angular.forEach($scope.agents, function(item, index){
 
             if( contact === item.contact ){
-                isFound = true;
+                isBlocked = true;
             }
         });
 
-        return isFound;
+        return isBlocked;
     }
 
-    $scope.loadAgents();
+    $scope.loadBlockedContacts();
  }]);

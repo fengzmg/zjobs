@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from scrapy.contrib.spiders.crawl import CrawlSpider
 from scrapy.http.request import Request
-from jobcrawler.items import JobItem, AgentInfo
+from jobcrawler.items import JobItem, BlockedContact
 import app.config as config
 from scrapy import log
 import re
@@ -46,17 +46,19 @@ class BaseSpider(CrawlSpider):
         if JobItem.is_exists(job_item):
             log.msg('[%s] skipping loading details as job already exists. job_title: %s' % (self.name, job_item.job_title))
             return False
+        if JobItem.is_older_required(job_item):
+            log.msg('[%s] skipping loading details as job is older than %s days. job_title: %s' % (self.name, str(config.HOUSEKEEPING_RECORD_ORDLER_THAN), job_item.job_title))
+            return False
         if re.search(config.AGENT_RULE_OUT_PATTERN, job_item.job_title):
             log.msg('[%s] skipping loading details as job is posted by agent. job_title: %s' % (self.name, job_item.job_title))
             return False
-        if AgentInfo.is_agent_contact(job_item.contact):
-            log.msg('[%s] skipping loading details as job contact is agent contact. contact: %s' % (self.name, job_item.contact))
+        if BlockedContact.is_contact_blocked(job_item.contact):
+            log.msg('[%s] skipping loading details as job contact is blocked. contact: %s' % (self.name, job_item.contact))
             return False
 
         if re.search(config.JOB_RULE_OUT_PATTERN, job_item.job_title):
             log.msg('[%s] skipping loading details as job is invalid. job_title: %s' % (self.name, job_item.job_title))
             return False
-
         return True
 
 
