@@ -174,7 +174,7 @@ angular.module('myApp', [
                       '</div>' +
                       '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownContextMenu">' +
                         '<li role="presentation">' +
-                            '<a role="menuitem" tabindex="-1" href="/blocked_contacts/add/'+ contact +'"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Mark as Agent</a>'+
+                            '<a role="menuitem" tabindex="-1" href="/blocked_contacts/add/'+ contact +'"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Block Contact</a>'+
                         '</li>' +
                       '</ul>' +
                     '</div>';

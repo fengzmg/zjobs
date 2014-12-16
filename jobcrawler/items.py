@@ -11,11 +11,10 @@ try:
 except ImportError:
     import json
 
-import scrapy
 from scrapy.item import BaseItem
 
 from app.config import logger
-# import sqlite3 as dbi # uncomment if using sqlite3
+
 import pg8000 as dbi
 import app.config as config
 
@@ -135,8 +134,8 @@ class JobItem(BaseObject):
             publish_date = item.publish_date
             try:
                 if publish_date is None:
-                    logger.info('publish_date is None.. hence returning true in is_older_required()')
-                    return True
+                    logger.info('publish_date is not yet loaded, hence returning true in is_older_required()')
+                    return False
 
                 if (datetime.datetime.now() - publish_date).days > int(config.HOUSEKEEPING_RECORD_ORDLER_THAN):
                     return True
@@ -299,14 +298,16 @@ class RejectionPattern(BaseObject):
 
 
 class BlockedContact(BaseObject):
-    property_names = ['contact']
+    property_names = ['contact', 'block_reason']
 
     table_name = 'BLOCKED_CONTACTS'
 
     contact = None
+    block_reason = None
 
-    def __init__(self, contact=None):
+    def __init__(self, contact=None, block_reason=None):
         self.contact = contact
+        self.block_reason = block_reason
 
     @classmethod
     def findall(cls):
@@ -373,20 +374,20 @@ class BlockedContact(BaseObject):
 
                 c.execute('INSERT INTO ' + self.table_name +
                           '(' +
-                          'contact' +
+                          'contact, block_reason' +
                           ') ' +
-                          'VALUES (%s)',
+                          'VALUES (%s, %s)',
                           (
-                              self.contact,
+                              self.contact, self.block_reason
                           ))
 
                 conn.commit()
-                logger.info('Saved BlockedContact: %s' % self.contact)
+                logger.info('Saved BlockedContact: %s' % repr(self))
 
             except Exception as e:
                 logger.error(e)
                 conn.rollback()
-                logger.info('Unable to save the BlockedContact: %s' % self.contact)
+                logger.info('Unable to save the BlockedContact: %s' % repr(self))
             finally:
                 conn.close()
 

@@ -62,9 +62,8 @@ class ItemPublishDateFilterPipeline(object):
 
 class ItemFieldFormatValidationPipeline(object):
     def process_item(self, item, spider):
-
         # validate the contact format
-        if not re.match(r"[0-9]+", item.contact):
+        if item.contact and item.contact != '' and not re.match(r"[0-9]+", item.contact):
             item.contact = ''  # set the contact to empty
 
         return item

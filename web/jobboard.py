@@ -100,6 +100,12 @@ def add_reject_rules():
     reject_pattern = RejectionPattern.from_dict(request.json)
     reject_pattern.save()
 
+
+@app.route('/blocked_contacts', methods=['GET', 'POST'])
+def get_blocked_contacts():
+    records = BlockedContact.findall()
+    return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
 @app.route('/blocked_contacts/add', methods=['POST'])
 def add_blocked_contact():
     blocked_contact = BlockedContact.from_dict(request.json)
@@ -127,11 +133,6 @@ def remove_blocked_contact():
         return response
 
     return "OK"
-
-@app.route('/blocked_contacts', methods=['GET', 'POST'])
-def get_agents():
-    records = BlockedContact.findall()
-    return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():

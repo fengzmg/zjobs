@@ -81,7 +81,8 @@ def create_db():
 
         c.execute('''
             CREATE TABLE IF NOT EXISTS BLOCKED_CONTACTS(
-                contact    text
+                contact    text,
+                block_reason text
             )
             ''')
 

@@ -33,7 +33,7 @@ class SggonguoSpider(BaseSpider):
             job_crawler_item.publish_date = re.search(r'.*([0-9]{4}-[0-9]{2}-[0-9]{2}).*', detail_item.xpath('.//div[@class="attr"]/text()[2]').extract()[0], re.M).group(1).strip()
             #Convert to the datetime format
             job_crawler_item.publish_date = datetime.datetime.strptime(job_crawler_item.publish_date, '%Y-%m-%d') if job_crawler_item.publish_date is not None else None
-            job_crawler_item.salary = detail_item.xpath('.//div[@class="attr"]/text()[4]').extract()[0].replace(',','').strip()
+            job_crawler_item.salary = detail_item.xpath('.//div[@class="attr"]/text()[4]').extract()[0].replace(',', '').strip()
             job_crawler_item.source = self.name
             job_crawler_item.crawled_date = datetime.datetime.now()
 
