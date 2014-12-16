@@ -110,16 +110,17 @@ def migrate_db():
     """
     conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
     try:
-        c = conn.cursor()
         logger.info('start migrating database')
-
-        c.execute('DROP TABLE IF EXISTS AGENT_INFOS')
-        c.execute('DROP INDEX IF EXISTS agent_infos_contact_idx')
-
-        conn.commit()
+        # c = conn.cursor()
+        #
+        #
+        # c.execute('DROP TABLE IF EXISTS AGENT_INFOS')
+        # c.execute('DROP INDEX IF EXISTS agent_infos_contact_idx')
+        #
+        # conn.commit()
         logger.info('done migrating database')
 
-        create_db()
+
 
     except Exception as e:
         logger.error('Unable to run migrate_db')
@@ -128,6 +129,8 @@ def migrate_db():
 
     finally:
         conn.close()
+
+    create_db()
 
 
 

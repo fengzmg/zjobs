@@ -12,7 +12,7 @@ class SingxinSpider(BaseSpider):
     )
 
     rules = (
-        Rule(LinkExtractor(allow='/category/view/id/47/page/[0-3]'), callback='parse_item', follow=True, ),
+        Rule(LinkExtractor(allow='/category/view/id/47/page/[0-1]'), callback='parse_item', follow=True, ),
     )
 
     def parse_start_url(self, response):
