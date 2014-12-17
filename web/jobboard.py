@@ -95,11 +95,17 @@ def get_reject_rules():
     records = RejectionPattern.findall()
     return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
-@app.route('/reject_rules/add', methods=['POST'])
-def add_reject_rules():
+@app.route('/reject_rules/save', methods=['POST'])
+def save_reject_rules():
     reject_pattern = RejectionPattern.from_dict(request.json)
     reject_pattern.save()
+    return "OK"
 
+@app.route('/reject_rules/remove', methods=['POST'])
+def remove_reject_rules():
+    reject_pattern = RejectionPattern.from_dict(request.json)
+    reject_pattern.remove()
+    return "OK"
 
 @app.route('/blocked_contacts', methods=['GET', 'POST'])
 def get_blocked_contacts():
@@ -107,7 +113,7 @@ def get_blocked_contacts():
     return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 @app.route('/blocked_contacts/save', methods=['POST'])
-def add_blocked_contact():
+def save_blocked_contact():
     blocked_contact = BlockedContact.from_dict(request.json)
     blocked_contact.save()
     return "OK"

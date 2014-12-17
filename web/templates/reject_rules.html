@@ -7,12 +7,20 @@
         </thead>
         <tbody>
         <tr ng-repeat="record in records">
-            <td>[[ record.reject_pattern ]]</td>
-            <td>[[ record.reject_reason ]]</td>
-            <td><span class="glyphicon glyphicon-trash" ng-click="remove($index)"></span></td>
+            <td ng-if="!record.is_editable">[[ record.reject_pattern ]]</td>
+            <td ng-if="record.is_editable"><input type="text" ng-model="record.reject_pattern"/></td>
+
+            <td ng-if="!record.is_editable">[[ record.reject_reason ]]</td>
+            <td ng-if="record.is_editable"><input type="text" ng-model="record.reject_reason"/></td>
+
+            <td ng-if="!record.is_editable">
+                <span class="glyphicon glyphicon-trash inline_icon_btn" ng-click="remove($index)"></span>
+                <span class="glyphicon glyphicon-edit inline_icon_btn" ng-click="modify($index)"></span>
+            </td>
+            <td ng-if="record.is_editable"><span class="glyphicon glyphicon-floppy-disk inline_icon_btn" ng-click="save(record)"></span></td>
         </tr>
         <tr>
-            <td colspan="3" class="text-right"><span class="glyphicon glyphicon-plus" ng-click="add_new()"></span></td>
+            <td colspan="3" class="text-right"><span class="glyphicon glyphicon-plus inline_icon_btn" ng-click="add_new()"></span></td>
         </tr>
         </tbody>
     </table>

@@ -205,18 +205,34 @@ angular.module('myApp', [
         });
     }
 
-    $scope.refresh = function(){
-        $scope.fetchData();
+    $scope.add_new = function(){
+        $scope.records.push({'reject_pattern': '', 'reject_reason': '', 'is_editable': true});
     }
 
-    $scope.add_new = function(){
-        $scope.records.push({'reject_pattern': '', 'reject_reason': ''});
+    $scope.save = function(record){
+        $http.post('/reject_rules/save', record).success(function(data, status, headers, config){
+            record.is_editable = false;
+        }).error(function(data, status, headers, config){
+            alert('Cannot save record');
+        });
     }
 
     $scope.remove = function(index){
+        var record = $scope.records[index];
+        $http.post('/reject_rules/remove', record).success(function(data, status, headers, config){
+            $scope.records.splice(index, 1);
+        }).error(function(data, status, headers, config){
+            alert('Cannot remove record');
+        });
 
-        $scope.records.splice(index, 1);
+
     }
+
+    $scope.modify = function(index){
+        var record = $scope.records[index];
+        record.is_editable = true;
+    }
+
 
     $scope.fetchData();
 
@@ -228,10 +244,6 @@ angular.module('myApp', [
         }).error(function(data, status, headers, config){
             alert('Unable to load records');
         });
-    }
-
-    $scope.refresh = function(){
-        $scope.fetchData();
     }
 
     $scope.add_new = function(){
@@ -253,8 +265,6 @@ angular.module('myApp', [
         }).error(function(data, status, headers, config){
             alert('Cannot remove record');
         });
-
-
     }
 
     $scope.modify = function(index){
@@ -273,10 +283,6 @@ angular.module('myApp', [
         }).error(function(data, status, headers, config){
             alert('Unable to load jobs');
         });
-    }
-
-    $scope.refresh = function(){
-        $scope.fetchData();
     }
 
     $scope.page_request = {

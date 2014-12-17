@@ -263,7 +263,21 @@ class RejectionPattern(BaseObject):
             c = conn.cursor()
             c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE reject_pattern=%s',
                       reject_pattern)
-            return cls.property_names, c.fetchone()
+            return cls.from_dict(dict(zip(cls.property_names, c.fetchone()[0])))
+        finally:
+            conn.close()
+
+    def remove(self):
+        conn = self.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('DELETE FROM ' + self.table_name + ' WHERE reject_pattern=%s', (self.reject_pattern, ))
+            conn.commit()
+            logger.info('Removed rejection pattern: %s' % repr(self))
+        except Exception as e:
+            logger.error(e)
+            logger.info('Unable to remove rejection pattern: %s' % repr(self))
+            raise JobItemDBError(str(e))
         finally:
             conn.close()
 
@@ -271,6 +285,7 @@ class RejectionPattern(BaseObject):
         if self:
             conn = self.connect_db()
             try:
+                self.remove()  # remove the old record and insert again
                 c = conn.cursor()
 
                 c.execute('INSERT INTO ' + self.table_name +
@@ -282,13 +297,12 @@ class RejectionPattern(BaseObject):
                               self.reject_pattern,
                               self.reject_reason
                           ))
-                logger.info('Saved rejection pattern: %s' % self.reject_pattern)
-
                 conn.commit()
+                logger.info('Saved rejection pattern: %s' % repr(self))
             except Exception as e:
                 logger.error(e)
                 conn.rollback()
-                logger.info('Unable to save the rejection pattern: %s' % self.reject_pattern)
+                logger.info('Unable to save the rejection pattern: %s' % repr(self))
                 # raise JobItemDBError('Unable to save the job')
             finally:
                 conn.close()
