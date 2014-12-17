@@ -235,12 +235,12 @@ angular.module('myApp', [
     }
 
     $scope.add_new = function(){
-        $scope.records.push({'contact': '', 'is_new': true});
+        $scope.records.push({'contact': '', 'is_editable': true});
     }
 
     $scope.save = function(record){
-        $http.post('/blocked_contacts/add', record).success(function(data, status, headers, config){
-            record.is_new = false;
+        $http.post('/blocked_contacts/save', record).success(function(data, status, headers, config){
+            record.is_editable = false;
         }).error(function(data, status, headers, config){
             alert('Cannot save record');
         });
@@ -255,6 +255,11 @@ angular.module('myApp', [
         });
 
 
+    }
+
+    $scope.modify = function(index){
+        var record = $scope.records[index];
+        record.is_editable = true;
     }
 
     $scope.fetchData();

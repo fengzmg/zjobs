@@ -370,6 +370,7 @@ class BlockedContact(BaseObject):
         if self:
             conn = self.connect_db()
             try:
+                self.remove()  # remove the old record, and insert new
                 c = conn.cursor()
 
                 c.execute('INSERT INTO ' + self.table_name +

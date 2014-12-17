@@ -7,11 +7,17 @@
         </thead>
         <tbody>
         <tr ng-repeat="record in records">
-            <td ng-if="!record.is_new">[[ record.contact ]]</td>
-            <td ng-if="record.is_new"><input type="text" ng-model="record.contact"/></td>
-            <td></td>
-            <td ng-if="!record.is_new"><span class="glyphicon glyphicon-trash inline_icon_btn" ng-click="remove($index)"></span></td>
-            <td ng-if="record.is_new"><span class="glyphicon glyphicon-floppy-disk inline_icon_btn" ng-click="save(record)"></span></td>
+            <td ng-if="!record.is_editable">[[ record.contact ]]</td>
+            <td ng-if="record.is_editable"><input type="text" ng-model="record.contact"/></td>
+
+            <td ng-if="!record.is_editable">[[ record.block_reason ]]</td>
+            <td ng-if="record.is_editable"><input type="text" ng-model="record.block_reason"/></td>
+
+            <td ng-if="!record.is_editable">
+                <span class="glyphicon glyphicon-trash inline_icon_btn" ng-click="remove($index)"></span>
+                <span class="glyphicon glyphicon-edit inline_icon_btn" ng-click="modify($index)"></span>
+            </td>
+            <td ng-if="record.is_editable"><span class="glyphicon glyphicon-floppy-disk inline_icon_btn" ng-click="save(record)"></span></td>
         </tr>
         <tr>
             <td colspan="3" class="text-right"><span class="glyphicon glyphicon-plus inline_icon_btn" ng-click="add_new()"></span></td>

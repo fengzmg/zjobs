@@ -89,7 +89,7 @@ def extract_as_file(format='xlsx'):
     return response
 
 
-@app.route('/reject_rules', methods=['GET','POST'])
+@app.route('/reject_rules', methods=['GET', 'POST'])
 def get_reject_rules():
 
     records = RejectionPattern.findall()
@@ -106,7 +106,7 @@ def get_blocked_contacts():
     records = BlockedContact.findall()
     return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
-@app.route('/blocked_contacts/add', methods=['POST'])
+@app.route('/blocked_contacts/save', methods=['POST'])
 def add_blocked_contact():
     blocked_contact = BlockedContact.from_dict(request.json)
     blocked_contact.save()
