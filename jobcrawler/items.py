@@ -14,6 +14,7 @@ except ImportError:
 from scrapy.item import BaseItem
 
 from app.config import logger
+from app.run import Datasource
 
 import pg8000 as dbi
 import app.config as config
@@ -22,8 +23,7 @@ import app.config as config
 class BaseObject(BaseItem):
     @classmethod
     def connect_db(cls):
-        return dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER,
-                           password=config.DB_PASSWORD)
+        return Datasource.get_connection()
 
     @classmethod
     def from_dict(cls, dict_obj):

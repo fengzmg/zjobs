@@ -17,6 +17,11 @@ import time
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.schedulers.background import BackgroundScheduler
 
+class Datasource:
+    @staticmethod
+    def get_connection():
+        conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+        return conn
 
 class Scheduler:
     scheduler = None
@@ -31,7 +36,7 @@ class Scheduler:
 
 
 def create_db():
-    conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+    conn = Datasource.get_connection()
     try:
         c = conn.cursor()
 
@@ -108,7 +113,7 @@ def migrate_db():
     place holder for putting the migrate db scripts -- need to be updated before every release
     :return:
     """
-    conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
+    conn = Datasource.get_connection()
     try:
         logger.info('start migrating database')
         # c = conn.cursor()
