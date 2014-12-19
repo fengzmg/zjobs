@@ -9,7 +9,8 @@ from flask import Flask, redirect, url_for, make_response
 from flask.templating import render_template
 from flask import request
 
-from app.run import run_housekeeper, run_crawler, run_emailer, extract_file_as_bytes, Scheduler
+from app.context import Scheduler
+from app.run import AppRunner
 from jobcrawler.items import JobItem, RejectionPattern, BlockedContact
 
 
@@ -82,7 +83,7 @@ def get_menu():
 
 @app.route('/extract/<format>')
 def extract_as_file(format='xlsx'):
-    response = make_response(extract_file_as_bytes(format))
+    response = make_response(AppRunner.get_instance().extract_file_as_bytes(format))
     response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs_%s.%s" % (
         datetime.datetime.now().strftime('%Y-%m-%d'), format)
 
@@ -142,19 +143,19 @@ def remove_blocked_contact():
 
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():
-    Scheduler.get_scheduler().add_job(func=run_crawler)
+    Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_crawler)
     return redirect(url_for('index'))
 
 
 @app.route('/admin/run_housekeeper', methods=['GET'])
 def re_run_housekeeper():
-    Scheduler.get_scheduler().add_job(func=run_housekeeper)
+    Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_housekeeper)
     return redirect(url_for('index'))
 
 
 @app.route('/admin/run_emailer', methods=['GET'])
 def re_run_emailer():
-    Scheduler.get_scheduler().add_job(func=run_emailer)
+    Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_emailer)
     return redirect(url_for('index'))
 
 

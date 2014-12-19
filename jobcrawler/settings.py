@@ -7,8 +7,6 @@
 #
 # http://doc.scrapy.org/en/latest/topics/settings.html
 #
-import app.config as config
-
 from scrapy import log
 from scrapy import logformatter
 

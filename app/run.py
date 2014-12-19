@@ -1,291 +1,284 @@
 import os
 from os.path import dirname, realpath
 import sys
-
 app_home_dir = dirname(dirname(realpath(__file__)))
 sys.path.append(app_home_dir)  # setup sys path to use the current app modules
-
-import app.config as config
-import pg8000 as dbi
-from app.config import logger
-from jobcrawler.items import JobItem
 
 from multiprocessing import Pool
 import datetime
 import time
-
 from apscheduler.triggers.cron import CronTrigger
-from apscheduler.schedulers.background import BackgroundScheduler
+from app.context import logger, Datasource, Scheduler
+import app.config as config
+from jobcrawler.items import JobItem
 
-class Datasource:
-    @staticmethod
-    def get_connection():
-        conn = dbi.connect(host=config.DB_HOST, database=config.DATABASE, user=config.DB_USER, password=config.DB_PASSWORD)
-        return conn
+class AppRunner(object):
 
-class Scheduler:
-    scheduler = None
+    instance = None
+    datasource = Datasource.get_instance()
 
-    @staticmethod
-    def get_scheduler():
-        if Scheduler.scheduler is None:
-            Scheduler.scheduler = BackgroundScheduler(logger=logger)
-            Scheduler.scheduler.start()
+    @classmethod
+    def get_instance(cls):
+        if not cls.instance:
+            cls.instance = AppRunner()
+        return cls.instance
 
-        return Scheduler.scheduler
+    @classmethod
+    def create_db(cls):
+        conn = cls.datasource.get_connection()
+        try:
+            c = conn.cursor()
 
+            c.execute('DROP TABLE IF EXISTS CRAWLED_JOBS')
+            c.execute('DROP INDEX IF EXISTS job_title_idx')
 
-def create_db():
-    conn = Datasource.get_connection()
-    try:
-        c = conn.cursor()
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS CRAWLED_JOBS(
+                    source            text,
+                    crawled_date      date,
+                    publish_date      date,
+                    job_title         text,
+                    job_desc          text,
+                    job_details_link  text,
+                    job_location      text,
+                    job_country       text,
+                    salary            text,
+                    employer_name     text,
+                    contact           text
+                )
+                ''')
 
-        c.execute('DROP TABLE IF EXISTS CRAWLED_JOBS')
-        c.execute('DROP INDEX IF EXISTS job_title_idx')
+            logger.info("created table and indexes for CRAWLED_JOBS")
 
-        c.execute('''
-            CREATE TABLE IF NOT EXISTS CRAWLED_JOBS(
-                source            text,
-                crawled_date      date,
-                publish_date      date,
-                job_title         text,
-                job_desc          text,
-                job_details_link  text,
-                job_location      text,
-                job_country       text,
-                salary            text,
-                employer_name     text,
-                contact           text
-            )
+            c.execute('''
+                CREATE UNIQUE INDEX job_title_idx ON CRAWLED_JOBS(job_title)
             ''')
 
-        logger.info("created table and indexes for CRAWLED_JOBS")
+            c.execute('DROP TABLE IF EXISTS JOB_REJECTION_RULES')
+            c.execute('DROP INDEX IF EXISTS reject_pattern_idx')
 
-        c.execute('''
-            CREATE UNIQUE INDEX job_title_idx ON CRAWLED_JOBS(job_title)
-        ''')
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS JOB_REJECTION_RULES(
+                    reject_pattern    text,
+                    reject_reason     text
+                )
+                ''')
 
-        c.execute('DROP TABLE IF EXISTS JOB_REJECTION_RULES')
-        c.execute('DROP INDEX IF EXISTS reject_pattern_idx')
-
-        c.execute('''
-            CREATE TABLE IF NOT EXISTS JOB_REJECTION_RULES(
-                reject_pattern    text,
-                reject_reason     text
-            )
+            c.execute('''
+                CREATE UNIQUE INDEX reject_pattern_idx ON JOB_REJECTION_RULES(reject_pattern)
             ''')
 
-        c.execute('''
-            CREATE UNIQUE INDEX reject_pattern_idx ON JOB_REJECTION_RULES(reject_pattern)
-        ''')
+            logger.info("created table and indexes for JOB_REJECTION_RULES")
 
-        logger.info("created table and indexes for JOB_REJECTION_RULES")
+            c.execute('DROP TABLE IF EXISTS BLOCKED_CONTACTS')
+            c.execute('DROP INDEX IF EXISTS blocked_contacts_idx')
 
-        c.execute('DROP TABLE IF EXISTS BLOCKED_CONTACTS')
-        c.execute('DROP INDEX IF EXISTS blocked_contacts_idx')
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS BLOCKED_CONTACTS(
+                    contact    text,
+                    block_reason text
+                )
+                ''')
 
-        c.execute('''
-            CREATE TABLE IF NOT EXISTS BLOCKED_CONTACTS(
-                contact    text,
-                block_reason text
-            )
+            c.execute('''
+                CREATE UNIQUE INDEX blocked_contacts_idx ON BLOCKED_CONTACTS(contact)
             ''')
 
-        c.execute('''
-            CREATE UNIQUE INDEX blocked_contacts_idx ON BLOCKED_CONTACTS(contact)
-        ''')
-
-        logger.info("created table and indexes for BLOCKED_CONTACTS")
+            logger.info("created table and indexes for BLOCKED_CONTACTS")
 
 
-        conn.commit()
-        logger.info('done create database')
-    except Exception as e:
-        logger.error('Unable to run create_db')
-        logger.error(e)
-        conn.rollback()
+            conn.commit()
+            logger.info('done create database')
+        except Exception as e:
+            logger.error('Unable to run create_db')
+            logger.error(e)
+            conn.rollback()
 
-    finally:
-        conn.close()
+        finally:
+            conn.close()
 
-def migrate_db():
-    """
-    place holder for putting the migrate db scripts -- need to be updated before every release
-    :return:
-    """
-    conn = Datasource.get_connection()
-    try:
-        logger.info('start migrating database')
-        # c = conn.cursor()
-        #
-        #
-        # c.execute('DROP TABLE IF EXISTS AGENT_INFOS')
-        # c.execute('DROP INDEX IF EXISTS agent_infos_contact_idx')
-        #
-        # conn.commit()
-        logger.info('done migrating database')
+    @classmethod
+    def migrate_db(cls):
+        """
+        place holder for putting the migrate db scripts -- need to be updated before every release
+        :return:
+        """
+        conn = cls.datasource.get_connection()
+        try:
+            logger.info('start migrating database')
+            # c = conn.cursor()
+            #
+            #
+            # c.execute('DROP TABLE IF EXISTS AGENT_INFOS')
+            # c.execute('DROP INDEX IF EXISTS agent_infos_contact_idx')
+            #
+            # conn.commit()
+            logger.info('done migrating database')
 
 
 
-    except Exception as e:
-        logger.error('Unable to run migrate_db')
-        logger.error(e)
-        conn.rollback()
+        except Exception as e:
+            logger.error('Unable to run migrate_db')
+            logger.error(e)
+            conn.rollback()
 
-    finally:
-        conn.close()
+        finally:
+            conn.close()
 
-    create_db()
-
-
-
-def _crawl(spider_name=None):
-    if spider_name:
-        os.system('cd %s && scrapy crawl %s' % (app_home_dir, spider_name))
-        logger.info('Done running spider %s' % spider_name)
-    return None
+        cls.create_db()
 
 
-def run_crawler():
-    start_time = time.time()
-    logger.info('start running crawler..')
+    @classmethod
+    def _crawl(cls, spider_name=None):
+        if spider_name:
+            os.system('cd %s && scrapy crawl %s' % (app_home_dir, spider_name))
+            logger.info('Done running spider %s' % spider_name)
+        return None
 
-    # os.system('python '+ app_home_dir +'/app/run_crawler.py')
-    spider_names = ['sgxin', 'shichengbbs', 'singxin', 'sggongzuo']
+    @classmethod
+    def run_crawler(cls):
+        start_time = time.time()
+        logger.info('start running crawler..')
 
-    pool = Pool(processes=len(spider_names))
-    pool.map(_crawl, spider_names)
+        # os.system('python '+ app_home_dir +'/app/run_crawler.py')
+        spider_names = ['sgxin', 'shichengbbs', 'singxin', 'sggongzuo']
 
-    logger.info('done running crawler.. Time elapsed: %.3fs' % (time.time() - start_time))
+        pool = Pool(processes=len(spider_names))
+        pool.map(cls._crawl, spider_names)
 
-
-def run_web():
-    logger.info('starting web..')
-    os.system('cd ' + app_home_dir + ' && gunicorn -c app/gunicorn.conf.py web.jobboard:app --debug')
-
-
-def run_flask_web():
-    import web.jobboard
-
-    web.jobboard.app.run(host='0.0.0.0', port=config.WEB_HTTP_PORT, debug=config.WEB_DEBUG_ENABLED)
+        logger.info('done running crawler.. Time elapsed: %.3fs' % (time.time() - start_time))
 
 
-def run_heartbeater():
-    import requests
+    @classmethod
+    def run_web(cls):
+        logger.info('starting web..')
+        os.system('cd ' + app_home_dir + ' && gunicorn -c app/gunicorn.conf.py web.jobboard:app --debug')
 
-    logger.info('started heartbeating..')
-    resp = requests.get(config.APP_HEARTBEAT_URL, headers={'User-Agent': 'Zjobs Heartbeater'})
-    logger.info('heartbeater received status_code %s', resp.status_code)
-    logger.info('done hearting beating')
+    @classmethod
+    def run_flask_web(cls):
+        import web.jobboard
 
+        web.jobboard.app.run(host='0.0.0.0', port=config.WEB_HTTP_PORT, debug=config.WEB_DEBUG_ENABLED)
 
-def run_housekeeper():
-    logger.info('start running housekeeper..')
-    logger.info('start removing records older than 14 days..')
-    JobItem.remove_old_records(retention_days=config.HOUSEKEEPING_RECORD_ORDLER_THAN)
-    logger.info('done removing records older than 14 days..')
+    @classmethod
+    def run_heartbeater(cls):
+        import requests
 
-    logger.info('start removing records posted by agents..')
-    JobItem.remove_agent_records()
-    logger.info('done removing records posted by agents..')
-    logger.info('done running housekeeper..')
+        logger.info('started heartbeating..')
+        resp = requests.get(config.APP_HEARTBEAT_URL, headers={'User-Agent': 'Zjobs Heartbeater'})
+        logger.info('heartbeater received status_code %s', resp.status_code)
+        logger.info('done hearting beating')
 
-def extract_file_as_bytes(format='xlsx'):
-    import xlsxwriter
-    import unicodecsv
-    import tempfile
+    @classmethod
+    def run_housekeeper(cls):
+        logger.info('start running housekeeper..')
+        logger.info('start removing records older than 14 days..')
+        JobItem.remove_old_records(retention_days=config.HOUSEKEEPING_RECORD_ORDLER_THAN)
+        logger.info('done removing records older than 14 days..')
 
-    tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix=('.%s' % format), delete=False)).name
+        logger.info('start removing records posted by agents..')
+        JobItem.remove_agent_records()
+        logger.info('done removing records posted by agents..')
+        logger.info('done running housekeeper..')
 
-    job_items = JobItem.findall()
+    @classmethod
+    def extract_file_as_bytes(cls, format='xlsx'):
+        import xlsxwriter
+        import unicodecsv
+        import tempfile
 
-    if format.lower() == 'xlsx':
-        workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format': 'yyyy-mm-dd'})
-        worksheet = workbook.add_worksheet('crawled_jobs')
-        worksheet.set_column('A:M', 40)
+        tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix=('.%s' % format), delete=False)).name
 
-        worksheet.write_row(0, 0, [property_name.upper() for property_name in JobItem.property_names])
+        job_items = JobItem.findall()
 
-        for rowIdx, job_item in enumerate(job_items):
-            worksheet.write_row(rowIdx + 1, 0, [getattr(job_item, property_name) for property_name in JobItem.property_names])
+        if format.lower() == 'xlsx':
+            workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format': 'yyyy-mm-dd'})
+            worksheet = workbook.add_worksheet('crawled_jobs')
+            worksheet.set_column('A:M', 40)
 
-        workbook.close()
-    elif format.lower() == 'csv':
-        with open(tmp_file, 'w') as f:
-            writer = unicodecsv.writer(f, encoding='utf-8')
-            writer.writerow([property_name.upper() for property_name in JobItem.property_names])
-            for job_item in job_items:
-                writer.writerow([getattr(job_item, property_name) for property_name in JobItem.property_names])
-    else:
+            worksheet.write_row(0, 0, [property_name.upper() for property_name in JobItem.property_names])
+
+            for rowIdx, job_item in enumerate(job_items):
+                worksheet.write_row(rowIdx + 1, 0, [getattr(job_item, property_name) for property_name in JobItem.property_names])
+
+            workbook.close()
+        elif format.lower() == 'csv':
+            with open(tmp_file, 'w') as f:
+                writer = unicodecsv.writer(f, encoding='utf-8')
+                writer.writerow([property_name.upper() for property_name in JobItem.property_names])
+                for job_item in job_items:
+                    writer.writerow([getattr(job_item, property_name) for property_name in JobItem.property_names])
+        else:
+            os.remove(tmp_file)
+            raise Exception("'%s' format is not supported" % format)
+
+        file_content = open(tmp_file, 'rb').read()
         os.remove(tmp_file)
-        raise Exception("'%s' format is not supported" % format)
+        return file_content
 
-    file_content = open(tmp_file, 'rb').read()
-    os.remove(tmp_file)
-    return file_content
+    @classmethod
+    def run_emailer(cls):
+        from email.mime.base import MIMEBase
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from email import Encoders
+        import smtplib
 
+        logger.info('start sending email to subscribers...')
+        smtp = smtplib.SMTP(host=config.SMTP_HOST, port=config.SMTP_PORT)
 
-def run_emailer():
-    from email.mime.base import MIMEBase
-    from email.mime.multipart import MIMEMultipart
-    from email.mime.text import MIMEText
-    from email import Encoders
-    import smtplib
+        try:
+            smtp.set_debuglevel(4)
+            smtp.ehlo()
+            smtp.starttls()
+            smtp.ehlo()
+            smtp.login(user=config.SMTP_USER, password=config.SMTP_PASSWORD)
 
-    logger.info('start sending email to subscribers...')
-    smtp = smtplib.SMTP(host=config.SMTP_HOST, port=config.SMTP_PORT)
+            logger.info('established secure connection to smtp server...')
 
-    try:
-        smtp.set_debuglevel(4)
-        smtp.ehlo()
-        smtp.starttls()
-        smtp.ehlo()
-        smtp.login(user=config.SMTP_USER, password=config.SMTP_PASSWORD)
+            toaddrs = config.TO_ADDRS
+            fromaddr = config.FROM_ADDR
 
-        logger.info('established secure connection to smtp server...')
+            current_date_string = datetime.datetime.now().strftime('%Y-%m-%d')
+            message_subject = "%s:%s" % (config.APP_NAME, current_date_string)
+            message_text = "Thank you for subscribing %s. Please find the newly posted jobs as of %s" % (
+                config.APP_NAME, current_date_string)
 
-        toaddrs = config.TO_ADDRS
-        fromaddr = config.FROM_ADDR
+            msg = MIMEMultipart()
+            msg['From'] = fromaddr
+            msg['To'] = ','.join(toaddrs)
+            msg['Subject'] = message_subject
+            msg.attach(MIMEText(message_text))
 
-        current_date_string = datetime.datetime.now().strftime('%Y-%m-%d')
-        message_subject = "%s:%s" % (config.APP_NAME, current_date_string)
-        message_text = "Thank you for subscribing %s. Please find the newly posted jobs as of %s" % (
-            config.APP_NAME, current_date_string)
+            part = MIMEBase('application', "octet-stream")
+            file_format = 'xlsx'
+            part.set_payload(cls.extract_file_as_bytes(file_format))
+            logger.info('attached extracted files to the mail...waiting to be sent..')
+            Encoders.encode_base64(part)
+            part.add_header('Content-Disposition',
+                            'attachment; filename="extracted_jobs_%s.%s"' % (current_date_string, file_format))
+            msg.attach(part)
 
-        msg = MIMEMultipart()
-        msg['From'] = fromaddr
-        msg['To'] = ','.join(toaddrs)
-        msg['Subject'] = message_subject
-        msg.attach(MIMEText(message_text))
-
-        part = MIMEBase('application', "octet-stream")
-        file_format = 'xlsx'
-        part.set_payload(extract_file_as_bytes(file_format))
-        logger.info('attached extracted files to the mail...waiting to be sent..')
-        Encoders.encode_base64(part)
-        part.add_header('Content-Disposition',
-                        'attachment; filename="extracted_jobs_%s.%s"' % (current_date_string, file_format))
-        msg.attach(part)
-
-        smtp.sendmail(fromaddr, toaddrs, msg.as_string())
-        logger.info('done sending email to subscribers...')
-    except Exception as e:
-        logger.error(e)
-    finally:
-        smtp.quit()
+            smtp.sendmail(fromaddr, toaddrs, msg.as_string())
+            logger.info('done sending email to subscribers...')
+        except Exception as e:
+            logger.error(e)
+        finally:
+            smtp.quit()
 
 
-def run_batch_jobs():
-    scheduler = Scheduler.get_scheduler()
-    scheduler.add_job(func=run_crawler, trigger=CronTrigger(hour='*/04'))
-    scheduler.add_job(func=run_housekeeper, trigger=CronTrigger(hour='23', minute='05'))
-    scheduler.add_job(func=run_heartbeater, trigger=CronTrigger(minute='*/30'))
-    scheduler.add_job(func=run_emailer, trigger=CronTrigger(hour='23', minute='35'))
+    @classmethod
+    def run_batch_jobs(cls):
+        scheduler = Scheduler.get_scheduler()
+        scheduler.add_job(func=cls.run_crawler, trigger=CronTrigger(hour='*/04'))
+        scheduler.add_job(func=cls.run_housekeeper, trigger=CronTrigger(hour='23', minute='05'))
+        scheduler.add_job(func=cls.run_heartbeater, trigger=CronTrigger(minute='*/30'))
+        scheduler.add_job(func=cls.run_emailer, trigger=CronTrigger(hour='23', minute='35'))
 
-
-def run_app():
-    run_batch_jobs()
-    run_web()
+    @classmethod
+    def run_app(cls):
+        cls.run_batch_jobs()
+        cls.run_web()
 
 
 def parse_process_args():
@@ -297,25 +290,25 @@ def parse_process_args():
     args = parser.parse_args()
 
     if args.component is None:
-        run_app()
+        AppRunner.run_app()
     elif args.component == 'all':
-        run_app()
+        AppRunner.run_app()
     elif args.component == 'batch_jobs':
-        run_batch_jobs()
+        AppRunner.run_batch_jobs()
     elif args.component == 'crawler':
-        run_crawler()
+        AppRunner.run_crawler()
     elif args.component == 'housekeeper':
-        run_housekeeper()
+        AppRunner.run_housekeeper()
     elif args.component == 'heartbeater':
-        run_heartbeater()
+        AppRunner.run_heartbeater()
     elif args.component == 'web':
-        run_web()
+        AppRunner.run_web()
     elif args.component == 'flask_web':
-        run_flask_web()
+        AppRunner.run_flask_web()
     elif args.component == 'migrate_db':
-        migrate_db()
+        AppRunner.migrate_db()
     elif args.component == 'emailer':
-        run_emailer()
+        AppRunner.run_emailer()
     else:
         print 'Invalid Usage: '
         parser.print_help()

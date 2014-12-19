@@ -8,9 +8,7 @@ import re
 from scrapy.exceptions import DropItem
 from scrapy import log
 import app.config as config
-import datetime
 from jobcrawler.items import JobItem, BlockedContact
-# import traceback
 
 
 class ItemPrintingPipeline(object):

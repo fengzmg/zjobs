@@ -13,17 +13,17 @@ except ImportError:
 
 from scrapy.item import BaseItem
 
-from app.config import logger
-from app.run import Datasource
+from app.context import Datasource, logger
 
 import pg8000 as dbi
 import app.config as config
 
-
 class BaseObject(BaseItem):
+    datasource = Datasource.get_instance()
+
     @classmethod
-    def connect_db(cls):
-        return Datasource.get_connection()
+    def connect_db(self):
+        return self.datasource.get_connection()
 
     @classmethod
     def from_dict(cls, dict_obj):
@@ -170,7 +170,7 @@ class JobItem(BaseObject):
                 # TODO need to add the criteria handling
                 c.execute('SELECT * FROM ( \
                         SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
-                    ) AS RESULT LIMIT %s OFFSET %s  ', (size, size * (page_no - 1) ))
+                    ) AS RESULT LIMIT %s OFFSET %s  ', (size, size * (page_no - 1)))
 
             return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
         finally:

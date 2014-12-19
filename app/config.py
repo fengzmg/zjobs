@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import logging
 
 APP_NAME = 'Zjobs'
 APP_HOME = '/apps/jobcrawler'
@@ -29,19 +28,5 @@ EXPORT_TO_FILE_ENABLED = False
 
 APP_HEARTBEAT_URL = 'https://zjobs.herokuapp.com/'
 
-###################################################
-#   Logging Configuration  -- config.logger can be imported
-##################################################
-logger = logging.getLogger('zjobs.backend')
-logger.setLevel(logging.INFO)
-
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('[%(asctime)s] [%(process)d] [%(levelname)s] [%(name)s] %(message)s')
-ch.setFormatter(formatter)
-# add the handlers to the logger
-logger.addHandler(ch)
 
 
