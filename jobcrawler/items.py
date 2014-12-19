@@ -64,39 +64,38 @@ class JobItem(BaseObject):
     def __repr__(self):
         return repr(self.__dict__)
 
-    @classmethod
-    def save(cls, item=None):
-        if item:
-            conn = cls.connect_db()
+    def save(self):
+        if self:
+            conn = self.connect_db()
             try:
                 c = conn.cursor()
 
-                c.execute('INSERT INTO ' + cls.table_name +
+                c.execute('INSERT INTO ' + self.table_name +
                           '(' +
                           'job_title, job_desc, job_details_link, job_location, job_country,' +
                           'salary, employer_name, publish_date, contact, source, crawled_date' +
                           ') ' +
-                          'VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)',
+                          'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                           (
-                              item.job_title,
-                              item.job_desc,
-                              item.job_details_link,
-                              item.job_location,
-                              item.job_country,
-                              item.salary,
-                              item.employer_name,
-                              item.publish_date,
-                              item.contact,
-                              item.source,
-                              item.crawled_date
+                              self.job_title,
+                              self.job_desc,
+                              self.job_details_link,
+                              self.job_location,
+                              self.job_country,
+                              self.salary,
+                              self.employer_name,
+                              self.publish_date,
+                              self.contact,
+                              self.source,
+                              self.crawled_date
 
                           ))
-                logger.info('Saved job: %s' % item.job_title)
+                logger.info('Saved job: %s' % self.job_title)
 
                 conn.commit()
             except Exception as e:
                 conn.rollback()
-                logger.error('Unable to save the job: %s' % item.job_title)
+                logger.error('Unable to save the job: %s' % self.job_title)
                 logger.error(e)
             finally:
                 conn.close()
@@ -111,7 +110,7 @@ class JobItem(BaseObject):
                 conn = cls.connect_db()
                 try:
                     c = conn.cursor()
-                    c.execute("SELECT COUNT(*) FROM " + cls.table_name + " WHERE job_title=%s", (job_title,))
+                    c.execute("SELECT COUNT(*) FROM " + cls.table_name + " WHERE job_title=?", (job_title,))
                     job_item_count = int(c.fetchone()[0])
                     return job_item_count > 0
                 except Exception as e:
@@ -165,12 +164,12 @@ class JobItem(BaseObject):
 
                 c.execute('SELECT * FROM ( \
                         SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
-                    ) AS RESULT LIMIT %s OFFSET %s  ', (size, size * (page_no - 1) ))
+                    ) AS RESULT LIMIT ? OFFSET ?  ', (size, size * (page_no - 1) ))
             else:
                 # TODO need to add the criteria handling
                 c.execute('SELECT * FROM ( \
                         SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
-                    ) AS RESULT LIMIT %s OFFSET %s  ', (size, size * (page_no - 1)))
+                    ) AS RESULT LIMIT ? OFFSET ?  ', (size, size * (page_no - 1)))
 
             return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
         finally:
@@ -261,7 +260,7 @@ class RejectionPattern(BaseObject):
         conn = cls.connect_db()
         try:
             c = conn.cursor()
-            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE reject_pattern=%s',
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE reject_pattern=?',
                       reject_pattern)
             return cls.from_dict(dict(zip(cls.property_names, c.fetchone()[0])))
         finally:
@@ -271,7 +270,7 @@ class RejectionPattern(BaseObject):
         conn = self.connect_db()
         try:
             c = conn.cursor()
-            c.execute('DELETE FROM ' + self.table_name + ' WHERE reject_pattern=%s', (self.reject_pattern, ))
+            c.execute('DELETE FROM ' + self.table_name + ' WHERE reject_pattern=?', (self.reject_pattern, ))
             conn.commit()
             logger.info('Removed rejection pattern: %s' % repr(self))
         except Exception as e:
@@ -292,7 +291,7 @@ class RejectionPattern(BaseObject):
                           '(' +
                           'reject_pattern, reject_reason' +
                           ') ' +
-                          'VALUES (%s, %s)',
+                          'VALUES (?, ?)',
                           (
                               self.reject_pattern,
                               self.reject_reason
@@ -339,7 +338,7 @@ class BlockedContact(BaseObject):
         conn = cls.connect_db()
         try:
             c = conn.cursor()
-            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE contact=%s',
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE contact=?',
                       contact)
             return cls.from_dict(dict(zip(cls.property_names, c.fetchone()[0])))
         except Exception as e:
@@ -357,7 +356,7 @@ class BlockedContact(BaseObject):
         conn = cls.connect_db()
         try:
             c = conn.cursor()
-            c.execute('SELECT COUNT(*) FROM ' + cls.table_name + ' WHERE contact=%s', (contact, ))
+            c.execute('SELECT COUNT(*) FROM ' + cls.table_name + ' WHERE contact=?', (contact, ))
             return int(c.fetchone()[0]) > 0
         except Exception as e:
             logger.error(e)
@@ -370,7 +369,7 @@ class BlockedContact(BaseObject):
         conn = self.connect_db()
         try:
             c = conn.cursor()
-            c.execute('DELETE FROM ' + self.table_name + ' WHERE contact=%s', (self.contact, ))
+            c.execute('DELETE FROM ' + self.table_name + ' WHERE contact=?', (self.contact, ))
             conn.commit()
             logger.info('Removed blocked contact: ' + self.contact)
         except Exception as e:
@@ -391,7 +390,7 @@ class BlockedContact(BaseObject):
                           '(' +
                           'contact, block_reason' +
                           ') ' +
-                          'VALUES (%s, %s)',
+                          'VALUES (?, ?)',
                           (
                               self.contact, self.block_reason
                           ))

@@ -70,7 +70,7 @@ class ItemFieldFormatValidationPipeline(object):
 class ItemSaveToDBPipeline(object):
     def process_item(self, item, spider):
         try:
-            JobItem.save(item)
+            item.save()
         except:
             raise DropItem('Unable to save the job: %s' % item.job_title)
         return item

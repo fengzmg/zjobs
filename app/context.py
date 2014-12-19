@@ -21,7 +21,7 @@ logger.addHandler(ch)
 
 class Datasource:
     instance = None
-
+    dbi.paramstyle = 'qmark'
     @classmethod
     def get_instance(cls):
         if not cls.instance:
