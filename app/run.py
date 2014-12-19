@@ -12,6 +12,17 @@ from app.context import logger, Datasource, Scheduler
 import app.config as config
 from jobcrawler.items import JobItem
 
+class CrawlerRunner:
+    def _crawl(cls, spider_name=None):
+        if spider_name:
+            os.system('cd %s && scrapy crawl %s' % (app_home_dir, spider_name))
+            logger.info('Done running spider %s' % spider_name)
+        return None
+
+    def __call__(self, *args, **kwargs):
+        self._crawl(args[0])
+
+
 class AppRunner(object):
 
     instance = None
@@ -129,13 +140,6 @@ class AppRunner(object):
 
 
     @classmethod
-    def _crawl(cls, spider_name=None):
-        if spider_name:
-            os.system('cd %s && scrapy crawl %s' % (app_home_dir, spider_name))
-            logger.info('Done running spider %s' % spider_name)
-        return None
-
-    @classmethod
     def run_crawler(cls):
         start_time = time.time()
         logger.info('start running crawler..')
@@ -144,7 +148,7 @@ class AppRunner(object):
         spider_names = ['sgxin', 'shichengbbs', 'singxin', 'sggongzuo']
 
         pool = Pool(processes=len(spider_names))
-        pool.map(cls._crawl, spider_names)
+        pool.map(CrawlerRunner(), spider_names)
 
         logger.info('done running crawler.. Time elapsed: %.3fs' % (time.time() - start_time))
 
