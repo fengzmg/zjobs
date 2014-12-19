@@ -1,4 +1,5 @@
 from os.path import dirname, realpath
+import random
 import sys
 import os
 import datetime
@@ -128,19 +129,43 @@ class JobItemTest(BaseTestCase):
         self.assertEqual(2, len(records))
 
     def test_find_with_pagination(self):
-        for i in range(0, 100):
+        for i in range(0, 200):
             job_item = JobItem()
             job_item.job_title='job_item_%d' % i
             job_item.save()
 
-        records = JobItem.find_with_pagination(page_request={'page_no':2, 'size':10})
+        records = JobItem.find_with_pagination(page_request={'page_no':2, 'size': 100})
 
         print 'Job Items', records
-        self.assertEqual(10, len(records))
+        self.assertEqual(100, len(records))
 
     def test_is_exists(self):
         self.job_item.save()
         self.assertTrue(JobItem.is_exists(self.job_item), '%s should exist' % self.job_item.job_title)
+
+    def test_remove_blocked_records(self):
+        for i in range(0, 200):
+            job_item = JobItem()
+            job_item.job_title='job_item_%d' % i
+            job_item.contact = str(random.randint(90000000, 99999999))
+            job_item.save()
+
+            # mark the contact as blocked
+            BlockedContact(job_item.contact, 'For Testing').save()
+
+        # run the remove action
+        JobItem.remove_blocked_records()
+
+        conn = self.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT COUNT(*) FROM ' + JobItem.table_name)
+            self.assertEqual(c.fetchone()[0], 0, 'Count of job items should be 0')
+        except:
+            pass
+        finally:
+            conn.close()
+
 
 class BlockedContactTest(BaseTestCase):
     def setUp(self):
@@ -172,6 +197,12 @@ class BlockedContactTest(BaseTestCase):
         print 'BlockedContacts', records
         self.assertEqual(2, len(records))
 
+    def test_find(self):
+        self.blocked_contact.save()
+        result = BlockedContact.find(self.blocked_contact.contact)
+        self.assertEqual(self.blocked_contact.contact, result.contact, 'Item found should be the same as saved')
+
+
     def test_remove(self):
         self.blocked_contact.save()
         self.blocked_contact.remove()
@@ -184,6 +215,10 @@ class BlockedContactTest(BaseTestCase):
             pass
         finally:
             conn.close()
+
+    def test_is_contact_blocked(self):
+        self.blocked_contact.save()
+        self.assertTrue(BlockedContact.is_contact_blocked(self.blocked_contact.contact), 'Contact should been blocked')
 
 class RejectionPatternTest(BaseTestCase):
     def setUp(self):
@@ -214,6 +249,11 @@ class RejectionPatternTest(BaseTestCase):
         records = RejectionPattern.findall()
         print 'rejection_pattern', records
         self.assertEqual(2, len(records))
+
+    def test_find(self):
+        self.rejection_pattern.save()
+        result = RejectionPattern.find(self.rejection_pattern.reject_pattern)
+        self.assertEqual(self.rejection_pattern.reject_pattern, result.reject_pattern, 'Item found should be the same as saved')
 
     def test_remove(self):
         self.rejection_pattern.save()

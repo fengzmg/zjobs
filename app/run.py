@@ -177,7 +177,7 @@ class AppRunner(object):
         logger.info('done removing records older than 14 days..')
 
         logger.info('start removing records posted by agents..')
-        JobItem.remove_agent_records()
+        JobItem.remove_blocked_records()
         logger.info('done removing records posted by agents..')
         logger.info('done running housekeeper..')
 

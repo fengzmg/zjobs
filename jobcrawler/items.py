@@ -217,7 +217,7 @@ class JobItem(BaseObject):
             conn.close()
 
     @classmethod
-    def remove_agent_records(cls):
+    def remove_blocked_records(cls):
         conn = cls.connect_db()
         try:
             c = conn.cursor()
@@ -261,8 +261,8 @@ class RejectionPattern(BaseObject):
         try:
             c = conn.cursor()
             c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE reject_pattern=?',
-                      reject_pattern)
-            return cls.from_dict(dict(zip(cls.property_names, c.fetchone()[0])))
+                      (reject_pattern,))
+            return cls.from_dict(dict(zip(cls.property_names, c.fetchone())))
         finally:
             conn.close()
 
@@ -339,8 +339,8 @@ class BlockedContact(BaseObject):
         try:
             c = conn.cursor()
             c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE contact=?',
-                      contact)
-            return cls.from_dict(dict(zip(cls.property_names, c.fetchone()[0])))
+                      (contact,))
+            return cls.from_dict(dict(zip(cls.property_names, c.fetchone())))
         except Exception as e:
             logger.error(e)
             logger.info('returning None as exception occurs in BlockedContact.find()')
@@ -349,7 +349,7 @@ class BlockedContact(BaseObject):
             conn.close()
 
     @classmethod
-    def is_contact_blocked(cls, contact):
+    def is_contact_blocked(cls, contact=''):
         if contact is None or contact == '':
             logger.info('returning False as contact is None or Empty in is_contact_blocked()')
             return False
