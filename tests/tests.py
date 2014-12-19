@@ -127,6 +127,17 @@ class JobItemTest(BaseTestCase):
         print 'Job Items', records
         self.assertEqual(2, len(records))
 
+    def test_find_with_pagination(self):
+        for i in range(0, 100):
+            job_item = JobItem()
+            job_item.job_title='job_item_%d' % i
+            job_item.save()
+
+        records = JobItem.find_with_pagination(page_request={'page_no':2, 'size':10})
+
+        print 'Job Items', records
+        self.assertEqual(10, len(records))
+
     def test_is_exists(self):
         self.job_item.save()
         self.assertTrue(JobItem.is_exists(self.job_item), '%s should exist' % self.job_item.job_title)
