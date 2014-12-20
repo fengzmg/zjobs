@@ -175,20 +175,52 @@ angular.module('myApp', [
                       '</div>' +
                       '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownContextMenu">' +
                         '<li role="presentation">' +
-                            '<a role="menuitem" tabindex="-1" class="context-menu-item" href="#"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Block Contact</a>'+
+                            '<a role="menuitem" tabindex="-1" class="context-menu-item_block_contact" href="#"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Block Contact</a>'+
                             '<a role="menuitem" tabindex="-1" href="tel:'+ contact + '"><span class="glyphicon glyphicon-earphone">&nbsp;</span>Call Contact</a>'+
                         '</li>' +
                       '</ul>' +
                     '</div>';
 
-                jQuery(element).html(template);
+                    var modalBox = '<div id="block_contact_modal" class="modal">' +
+                                      '<div class="modal-dialog modal-sm">' +
+                                        '<div class="modal-content">' +
+                                          '<div class="modal-header">' +
+                                            '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>' +
+                                            '<h4 class="modal-title">Please Enter Block Reason</h4>' +
+                                          '</div>' +
+                                          '<div class="modal-body">' +
+                                            '<input id="block_reason" type="text" class="form-control"/>' +
+                                          '</div>' +
+                                          '<div class="modal-footer">' +
+                                            '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>' +
+                                            '<button type="button" class="btn btn-primary" id="confirm_block" >Block</button>' +
+                                          '</div>' +
+                                        '</div><!-- /.modal-content -->' +
+                                      '</div><!-- /.modal-dialog -->' +
+                                    '</div><!-- /.modal -->';
 
-                jQuery('a.context-menu-item', element).click(function(e){
+                jQuery(element).html(template + modalBox);
+
+                var block_contact_modal = jQuery('#block_contact_modal', element).modal({
+                            'backdrop':'static',
+                            'show': false
+                        });
+
+                jQuery('a.context-menu-item_block_contact', element).click(function(e){
                     scope.$apply(function(){
                         e.stopPropagation();
                         e.preventDefault();
 
-                        scope.markAsBlockedContact({'contact': contact});
+                        block_contact_modal.modal('show');
+
+                        jQuery('#confirm_block', element).click(function(){
+                            block_contact_modal.modal('hide');
+                            var block_reason = jQuery('#block_reason', block_contact_modal).val();
+
+                            scope.markAsBlockedContact({'contact': contact, 'block_reason': block_reason});
+
+                        });
+
                     });
                 });
             }, 100);
@@ -333,7 +365,7 @@ angular.module('myApp', [
     $scope.markAsBlockedContact = function(contact){
         $http.post('/blocked_contacts/save', contact).success(
             function(data, status, headers, config){
-                alert('Marked ' + contact.contact + ' as blocked contact');
+                //alert('Marked ' + contact.contact + ' as blocked contact');
                 $window.location.reload();
             }
             ).error(function(data, status, headers, config){
