@@ -119,14 +119,6 @@ def save_blocked_contact():
     blocked_contact.save()
     return "OK"
 
-@app.route('/blocked_contacts/add/<contact>', methods=['GET'])
-def add_blocked_contact_url(contact):
-    blocked_contact = BlockedContact(contact=contact)
-    blocked_contact.save()
-    # schedule a job to purge the agent records
-    # Scheduler.get_scheduler().add_job(func=run_housekeeper)
-    return redirect(url_for('index'))
-
 @app.route('/blocked_contacts/remove', methods=['POST'])
 def remove_blocked_contact():
     try:

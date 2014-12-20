@@ -159,9 +159,10 @@ angular.module('myApp', [
 
     };
 }])
-.directive("contactContextmenu", function($parse, $timeout) {
+.directive("contactContextmenu", function($parse, $timeout, $http) {
     return {
         restrict: 'A',
+        scope: true,
         link: function(scope, element, attrs) {
 
             //give some time for angular to render the html
@@ -174,12 +175,22 @@ angular.module('myApp', [
                       '</div>' +
                       '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownContextMenu">' +
                         '<li role="presentation">' +
-                            '<a role="menuitem" tabindex="-1" href="/blocked_contacts/add/'+ contact +'"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Block Contact</a>'+
+                            '<a role="menuitem" tabindex="-1" class="context-menu-item" href="#"><span class="glyphicon glyphicon-warning-sign">&nbsp;</span>Block Contact</a>'+
+                            '<a role="menuitem" tabindex="-1" href="tel:'+ contact + '"><span class="glyphicon glyphicon-earphone">&nbsp;</span>Call Contact</a>'+
                         '</li>' +
                       '</ul>' +
                     '</div>';
 
-                jQuery(element).html(template); 
+                jQuery(element).html(template);
+
+                jQuery('a.context-menu-item', element).click(function(e){
+                    scope.$apply(function(){
+                        e.stopPropagation();
+                        e.preventDefault();
+
+                        scope.markAsBlockedContact({'contact': contact});
+                    });
+                });
             }, 100);
 
             element.bind('contextmenu', function(event) {
@@ -190,7 +201,6 @@ angular.module('myApp', [
                     jQuery('.dropdown-toggle', element).dropdown('toggle');
                 });
             });
-
             
         }
 
@@ -275,7 +285,7 @@ angular.module('myApp', [
     $scope.fetchData();
 
  }])
-.controller('jobsController', ['$scope','$http', function($scope, $http) {
+.controller('jobsController', ['$scope','$http', '$route', '$window', function($scope, $http, $route, $window) {
     $scope.fetchData = function(){
         $http.post('/jobs', $scope.page_request).success(function(data, status, headers, config){
             $scope.paged_result = data;
@@ -320,14 +330,14 @@ angular.module('myApp', [
     //setup the watch function for the pagination
     $scope.$watch('page_request', $scope.paginationListener, true)
 
-    $scope.markAsAgentContact = function(contact){
-        alert(contact);
-        $http.post('/agents/add', {'contact': contact}).success(
+    $scope.markAsBlockedContact = function(contact){
+        $http.post('/blocked_contacts/save', contact).success(
             function(data, status, headers, config){
-                alert('Marked ' + contact + ' as agent contact');
+                alert('Marked ' + contact.contact + ' as blocked contact');
+                $window.location.reload();
             }
             ).error(function(data, status, headers, config){
-                alert('Unable to mark ' + contact + ' as agent contact');
+                alert('Unable to mark ' + contact.contact + ' as blocked contact');
             });
     }
 

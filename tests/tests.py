@@ -129,22 +129,22 @@ class JobItemTest(BaseTestCase):
         self.assertEqual(2, len(records))
 
     def test_find_with_pagination(self):
-        for i in range(0, 200):
+        for i in range(0, 20):
             job_item = JobItem()
             job_item.job_title='job_item_%d' % i
             job_item.save()
 
-        records = JobItem.find_with_pagination(page_request={'page_no':2, 'size': 100})
+        records = JobItem.find_with_pagination(page_request={'page_no':2, 'size': 10})
 
         print 'Job Items', records
-        self.assertEqual(100, len(records))
+        self.assertEqual(10, len(records))
 
     def test_is_exists(self):
         self.job_item.save()
         self.assertTrue(JobItem.is_exists(self.job_item), '%s should exist' % self.job_item.job_title)
 
     def test_remove_blocked_records(self):
-        for i in range(0, 200):
+        for i in range(0, 20):
             job_item = JobItem()
             job_item.job_title='job_item_%d' % i
             job_item.contact = str(random.randint(90000000, 99999999))
