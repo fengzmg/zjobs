@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 from os.path import dirname, realpath
 import sys
@@ -118,16 +119,9 @@ class AppRunner(object):
         try:
             logger.info('start migrating database')
             # c = conn.cursor()
-            #
-            #
-            # c.execute('DROP TABLE IF EXISTS AGENT_INFOS')
-            # c.execute('DROP INDEX IF EXISTS agent_infos_contact_idx')
-            #
+            # c.execute()
             # conn.commit()
             logger.info('done migrating database')
-
-
-
         except Exception as e:
             logger.error('Unable to run migrate_db')
             logger.error(e)

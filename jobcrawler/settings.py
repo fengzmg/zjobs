@@ -33,8 +33,8 @@ DEFAULT_REQUEST_HEADERS = {
 
 ITEM_PIPELINES = {
 
-    'jobcrawler.pipelines.ItemRecuritValidationPipeline': 1,
-    'jobcrawler.pipelines.ItemPostedByAgentPipeline': 2,
+    'jobcrawler.pipelines.ItemRejectionPatternPipeline': 1,
+    'jobcrawler.pipelines.ItemBlockedContactPipeline': 2,
     'jobcrawler.pipelines.ItemDuplicationCheckPipeline': 3,
     'jobcrawler.pipelines.ItemPublishDateFilterPipeline': 4,
     'jobcrawler.pipelines.ItemFieldFormatValidationPipeline': 5,

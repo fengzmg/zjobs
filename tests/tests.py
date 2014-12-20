@@ -224,7 +224,7 @@ class RejectionPatternTest(BaseTestCase):
     def setUp(self):
         self.clean_db()
         RejectionPattern.datasource = self.datasource
-        self.rejection_pattern = RejectionPattern('*%[1-9]','Just For Testing')
+        self.rejection_pattern = RejectionPattern('[1-9]+', 'Just For Testing')
 
     def tearDown(self):
         pass
@@ -243,7 +243,7 @@ class RejectionPatternTest(BaseTestCase):
 
     def test_find_all(self):
         self.rejection_pattern.save()
-        another_rejection_pattern = RejectionPattern('[a-z].*', 'Just Another Item for testing')
+        another_rejection_pattern = RejectionPattern('[a-z]+', 'Just Another Item for testing')
         another_rejection_pattern.save()
 
         records = RejectionPattern.findall()
@@ -267,6 +267,10 @@ class RejectionPatternTest(BaseTestCase):
             pass
         finally:
             conn.close()
+    def test_should_be_rejected(self):
+        self.rejection_pattern.save()  # saved [1-9]+
+        self.assertTrue(RejectionPattern.should_be_rejected('9887'), 'input_text should be rejected')
+        self.assertFalse(RejectionPattern.should_be_rejected('abcd'), 'input_text should not be rejected')
 
 
 def run_all_tests():

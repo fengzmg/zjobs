@@ -5,6 +5,7 @@
 # See documentation in:
 # http://doc.scrapy.org/en/latest/topics/items.html
 import datetime
+import re
 
 try:
     import simplejson as json
@@ -120,11 +121,11 @@ class JobItem(BaseObject):
                 finally:
                     conn.close()
             else:
-                logger.info('item title is None.. hence returning true in is_exist()')
+                logger.debug('item title is None.. hence returning true in is_exist()')
                 return True
 
         else:
-            logger.info('item is None.. hence returning true in is_exist()')
+            logger.debug('item is None.. hence returning true in is_exist()')
             return True
 
     @classmethod
@@ -133,7 +134,7 @@ class JobItem(BaseObject):
             publish_date = item.publish_date
             try:
                 if publish_date is None:
-                    logger.info('publish_date is not yet loaded, hence returning true in is_older_required()')
+                    logger.debug('publish_date is not yet loaded, hence returning true in is_older_required()')
                     return False
 
                 if (datetime.datetime.now() - publish_date).days > int(config.HOUSEKEEPING_RECORD_ORDLER_THAN):
@@ -145,8 +146,9 @@ class JobItem(BaseObject):
 
             return False
         else:
-            logger.info('item is None.. hence returning true in is_older_required()')
+            logger.debug('item is None.. hence returning true in is_older_required()')
             return True
+
 
     @classmethod
     def find_with_pagination(cls, page_request={'page_no': 1, 'size': 25, 'criteria': None}):
@@ -306,6 +308,27 @@ class RejectionPattern(BaseObject):
             finally:
                 conn.close()
 
+    @classmethod
+    def should_be_rejected(cls, input_text=''):
+        if input_text is None or input_text == '':
+            logger.debug('returning False as input_text is None or Empty in should_be_rejected()')
+            return False
+        try:
+            records = cls.findall()
+            for record in records:
+                match = re.search(record.reject_pattern, input_text)
+                if match:
+                    logger.debug('returning True as input_text matches %s in should_be_rejected()' % record.reject_pattern)
+                    return True
+                else:
+                    pass
+            logger.debug('returning False as input_text does not match any patterns should_be_rejected()')
+            return False
+        except Exception as e:
+            logger.error(e)
+            logger.error('returning False as exception occurs in is_contact_blocked()')
+            return False
+
     def __repr__(self):
         return json.dumps(self.__dict__)
 
@@ -351,7 +374,7 @@ class BlockedContact(BaseObject):
     @classmethod
     def is_contact_blocked(cls, contact=''):
         if contact is None or contact == '':
-            logger.info('returning False as contact is None or Empty in is_contact_blocked()')
+            logger.debug('returning False as contact is None or Empty in is_contact_blocked()')
             return False
         conn = cls.connect_db()
         try:
@@ -360,7 +383,7 @@ class BlockedContact(BaseObject):
             return int(c.fetchone()[0]) > 0
         except Exception as e:
             logger.error(e)
-            logger.info('returning False as exception occurs in is_contact_blocked()')
+            logger.error('returning False as exception occurs in is_contact_blocked()')
             return False
         finally:
             conn.close()

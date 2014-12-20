@@ -8,7 +8,7 @@ import re
 from scrapy.exceptions import DropItem
 from scrapy import log
 import app.config as config
-from jobcrawler.items import JobItem, BlockedContact
+from jobcrawler.items import JobItem, BlockedContact, RejectionPattern
 
 
 class ItemPrintingPipeline(object):
@@ -25,24 +25,17 @@ class ItemDuplicationCheckPipeline(object):
             return item
 
 
-class ItemRecuritValidationPipeline(object):
-    def process_item(self, item, spider):
-        pattern = config.JOB_RULE_OUT_PATTERN
-        match = re.search(pattern, item.job_title)
-        if match is None:
-            return item
-        else:
-            raise DropItem('Job is not posted by recuriter. Removing...')
-
-
-class ItemPostedByAgentPipeline(object):
+class ItemRejectionPatternPipeline(object):
     def process_item(self, item, spider):
         # check by title
-        pattern = config.AGENT_RULE_OUT_PATTERN
-        match = re.search(pattern, item.job_title)
-        if match:
-            raise DropItem('Job is posted by Agent based on job title. Removing...')
+        if RejectionPattern.should_be_rejected(item.job_title):
+            raise DropItem('Job matches rejection pattern. Removing...')
 
+        return item
+
+
+class ItemBlockedContactPipeline(object):
+    def process_item(self, item, spider):
         # check by contact
         if BlockedContact.is_contact_blocked(item.contact):
             raise DropItem('Job is posted by blocked contact. Removing...')
