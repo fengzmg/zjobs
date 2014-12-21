@@ -208,10 +208,10 @@ class JobItem(BaseObject):
             c = conn.cursor()
             c.execute('DELETE FROM ' + self.table_name + ' WHERE job_title=?', (self.job_title, ))
             conn.commit()
-            logger.info('Removed job item: %s' % repr(self))
+            logger.info('Removed job item: %s' % self.job_title)
         except Exception as e:
             logger.error(e)
-            logger.info('Unable to remove job item: %s' % repr(self))
+            logger.info('Unable to remove job item: %s' % self.job_title)
             conn.rollback()
             raise JobItemDBError(str(e))
         finally:
