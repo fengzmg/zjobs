@@ -11,7 +11,7 @@ import time
 from apscheduler.triggers.cron import CronTrigger
 from app.context import logger, Datasource, Scheduler
 import app.config as config
-from jobcrawler.items import JobItem, RejectionPattern
+from jobcrawler.items import JobItem
 
 
 class CrawlerRunner:
@@ -180,40 +180,6 @@ class AppRunner(object):
 
         logger.info('done running housekeeper..')
 
-    @classmethod
-    def extract_file_as_bytes(cls, format='xlsx'):
-        import xlsxwriter
-        import unicodecsv
-        import tempfile
-
-        tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.', suffix=('.%s' % format), delete=False)).name
-
-        job_items = JobItem.findall()
-
-        if format.lower() == 'xlsx':
-            workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format': 'yyyy-mm-dd'})
-            worksheet = workbook.add_worksheet('crawled_jobs')
-            worksheet.set_column('A:M', 40)
-
-            worksheet.write_row(0, 0, [property_name.upper() for property_name in JobItem.property_names])
-
-            for rowIdx, job_item in enumerate(job_items):
-                worksheet.write_row(rowIdx + 1, 0, [getattr(job_item, property_name) for property_name in JobItem.property_names])
-
-            workbook.close()
-        elif format.lower() == 'csv':
-            with open(tmp_file, 'w') as f:
-                writer = unicodecsv.writer(f, encoding='utf-8')
-                writer.writerow([property_name.upper() for property_name in JobItem.property_names])
-                for job_item in job_items:
-                    writer.writerow([getattr(job_item, property_name) for property_name in JobItem.property_names])
-        else:
-            os.remove(tmp_file)
-            raise Exception("'%s' format is not supported" % format)
-
-        file_content = open(tmp_file, 'rb').read()
-        os.remove(tmp_file)
-        return file_content
 
     @classmethod
     def run_emailer(cls):

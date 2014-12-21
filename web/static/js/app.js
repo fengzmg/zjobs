@@ -107,9 +107,9 @@ angular.module('myApp', [
                 'admin_run_crawler':'glyphicon glyphicon-repeat',
                 'admin_run_housekeeper':'glyphicon glyphicon-paperclip',
                 'admin_run_emailer':'glyphicon glyphicon-envelope',
-                'admin_config_reject_rules': 'glyphicon glyphicon-wrench',
+                'admin_config_reject_rules': 'glyphicon glyphicon-cog',
                 'admin_config_blocked_contacts': 'glyphicon glyphicon-wrench',
-                'extract_xlsx':'glyphicon glyphicon-floppy-disk'
+                'extract_jobs_xlsx':'glyphicon glyphicon-floppy-disk'
             }
 
             $http.get('/menus').success(

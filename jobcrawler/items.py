@@ -34,6 +34,57 @@ class BaseObject(BaseItem):
 
         return new_obj
 
+    @classmethod
+    def extract_records_as_bytes(cls, format='txt'):
+        import xlsxwriter
+        import unicodecsv
+        import tempfile
+        import os
+
+        tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.%s.' % cls.__name__, suffix=('.%s' % format), delete=False)).name
+
+        try:
+            records = cls.findall()
+
+            if format.lower() == 'xlsx':
+                workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format': 'yyyy-mm-dd'})
+                worksheet = workbook.add_worksheet('crawled_jobs')
+                worksheet.set_column('A:M', 40)
+
+                worksheet.write_row(0, 0, [property_name.upper() for property_name in cls.property_names])
+
+                for rowIdx, record in enumerate(records):
+                    worksheet.write_row(rowIdx + 1, 0, [getattr(record, property_name) for property_name in cls.property_names])
+
+                workbook.close()
+            elif format.lower() == 'csv':
+                with open(tmp_file, 'w') as f:
+                    writer = unicodecsv.writer(f, encoding='utf-8')
+                    writer.writerow([property_name.upper() for property_name in cls.property_names])
+                    for record in records:
+                        writer.writerow([getattr(record, property_name) for property_name in cls.property_names])
+
+            elif format.lower() == 'txt':
+                with open(tmp_file, 'w') as f:
+                    f.write('\t'.join([property_name.upper() for property_name in cls.property_names]) + '\n')
+                    for record in records:
+                        f.write('\t'.join([repr(getattr(record, property_name)) if getattr(record, property_name) is not None else ''  for property_name in cls.property_names]) + '\n')
+
+            else:
+                raise Exception("'%s' format is not supported" % format)
+
+            file_content = open(tmp_file, 'rb').read()
+            return file_content
+
+        except Exception as e:
+            logger.error(e)
+            logger.error('Unable to extract all records as bytes')
+            raise e
+
+        finally:
+            os.remove(tmp_file)
+
+
 
 class JobItemDBError(Exception):
     def __init__(self, message):
@@ -256,6 +307,7 @@ class JobItem(BaseObject):
                 record.remove()
                 count += 1
         logger.info('cleared %d job items matching the rejection pattern' % count)
+
 
 class RejectionPattern(BaseObject):
     property_names = ['reject_pattern', 'reject_reason']

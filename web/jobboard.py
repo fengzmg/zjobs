@@ -11,7 +11,7 @@ from flask import request
 
 from app.context import Scheduler
 from app.run import AppRunner
-from jobcrawler.items import JobItem, RejectionPattern, BlockedContact
+from jobcrawler.items import JobItem, RejectionPattern, BlockedContact, BaseObject
 
 
 app = Flask(__name__)
@@ -76,14 +76,14 @@ def get_menu():
     menu_items['menu_items'].append(
         {'label': 'Config Blocked Contacts', 'link': '/#/blocked_contacts', 'menu_item_id': 'admin_config_blocked_contacts'})
     menu_items['menu_items'].append(
-        {'label': 'Download As Excel', 'link': '/extract/xlsx', 'menu_item_id': 'extract_xlsx'})
+        {'label': 'Download As Excel', 'link': '/extract/jobs/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})
 
     return json.dumps(menu_items)
 
 
-@app.route('/extract/<format>')
-def extract_as_file(format='xlsx'):
-    response = make_response(AppRunner.get_instance().extract_file_as_bytes(format))
+@app.route('/extract/jobs/<format>')
+def extract_jobs_as_file(format='xlsx'):
+    response = make_response(JobItem.extract_records_as_bytes(format))
     response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs_%s.%s" % (
         datetime.datetime.now().strftime('%Y-%m-%d'), format)
 
@@ -107,6 +107,12 @@ def remove_reject_rules():
     reject_pattern = RejectionPattern.from_dict(request.json)
     reject_pattern.remove()
     return "OK"
+
+@app.route('/extract/reject_rules/<format>')
+def extract_reject_rules_as_file(format='csv'):
+    response = make_response(RejectionPattern.extract_records_as_bytes(format))
+    response.headers["Content-Disposition"] = "attachment; filename=reject_rules.%s" % format
+    return response
 
 @app.route('/blocked_contacts', methods=['GET', 'POST'])
 def get_blocked_contacts():
@@ -133,6 +139,12 @@ def remove_blocked_contact():
 
     return "OK"
 
+@app.route('/extract/blocked_contacts/<format>')
+def extract_blocked_contacts_as_file(format='csv'):
+    response = make_response(BlockedContact.extract_records_as_bytes(format))
+    response.headers["Content-Disposition"] = "attachment; filename=blocked_contacts.%s" % format
+    return response
+
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():
     Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_crawler)
@@ -155,7 +167,7 @@ def re_run_emailer():
 class CustomJsonEncoder(json.JSONEncoder):
 
     def default(self, obj):
-        if isinstance(obj, JobItem):
+        if isinstance(obj, BaseObject):
             return obj.__dict__
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()

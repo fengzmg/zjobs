@@ -287,6 +287,7 @@ class RejectionPatternTest(BaseTestCase):
             pass
         finally:
             conn.close()
+
     def test_should_be_rejected(self):
         RejectionPattern('[1-9]+').save()
         self.assertTrue(RejectionPattern.should_be_rejected('9887'), 'input_text should be rejected')
@@ -296,6 +297,21 @@ class RejectionPatternTest(BaseTestCase):
         self.assertTrue(RejectionPattern.should_be_rejected(u'是中介'), 'input_text should be rejected')
         self.assertFalse(RejectionPattern.should_be_rejected(u'非中介'), 'input_text should not be rejected')
 
+    def test_extract_records_as_bytes(self):
+        RejectionPattern('Pattern1', 'testing1').save()
+        RejectionPattern('Pattern2').save()
+        RejectionPattern('Pattern3', '测试').save()
+
+        print 'Content as txt: ', RejectionPattern.extract_records_as_bytes('txt')
+        print 'Content as excel: ', RejectionPattern.extract_records_as_bytes('xlsx')
+        print 'Content as csv: ', RejectionPattern.extract_records_as_bytes('csv')
+
+    def test_get_instance_classname(self):
+        self.assertEqual('RejectionPatternTest', self.__class__.__name__)
+
+    @classmethod
+    def test_get_classname(cls):
+        print cls.__name__
 
 def run_all_tests():
     unittest.main(verbosity=3)
