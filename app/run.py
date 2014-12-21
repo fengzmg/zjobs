@@ -120,8 +120,6 @@ class AppRunner(object):
         conn = cls.datasource.get_connection()
         try:
             logger.info('start migrating database')
-            for pattern in (config.AGENT_RULE_OUT_PATTERN.split('#') + config.JOB_RULE_OUT_PATTERN.split('#')):
-                RejectionPattern(pattern).save()
             logger.info('done migrating database')
         except Exception as e:
             logger.error('Unable to run migrate_db')
@@ -172,9 +170,14 @@ class AppRunner(object):
         JobItem.remove_old_records(retention_days=config.HOUSEKEEPING_RECORD_ORDLER_THAN)
         logger.info('done removing records older than 14 days..')
 
-        logger.info('start removing records posted by agents..')
+        logger.info('start removing records posted by blocked contacts..')
         JobItem.remove_blocked_records()
-        logger.info('done removing records posted by agents..')
+        logger.info('done removing records posted by blocked contacts..')
+
+        logger.info('start removing records should have been rejected..')
+        JobItem.remove_records_matches_rejection_pattern()
+        logger.info('done removing records should have been rejected..')
+
         logger.info('done running housekeeper..')
 
     @classmethod

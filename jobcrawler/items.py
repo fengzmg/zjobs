@@ -202,6 +202,21 @@ class JobItem(BaseObject):
         finally:
             conn.close()
 
+    def remove(self):
+        conn = self.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('DELETE FROM ' + self.table_name + ' WHERE job_title=?', (self.job_title, ))
+            conn.commit()
+            logger.info('Removed job item: %s' % repr(self))
+        except Exception as e:
+            logger.error(e)
+            logger.info('Unable to remove job item: %s' % repr(self))
+            conn.rollback()
+            raise JobItemDBError(str(e))
+        finally:
+            conn.close()
+
     @classmethod
     def remove_old_records(cls, retention_days=14):
         conn = cls.connect_db()
@@ -232,6 +247,15 @@ class JobItem(BaseObject):
         finally:
             conn.close()
 
+    @classmethod
+    def remove_records_matches_rejection_pattern(cls):
+        records = cls.findall()
+        count = 0
+        for record in records:
+            if RejectionPattern.should_be_rejected(record.job_title):
+                record.remove()
+                count += 1
+        logger.info('cleared %d job items matching the rejection pattern' % count)
 
 class RejectionPattern(BaseObject):
     property_names = ['reject_pattern', 'reject_reason']

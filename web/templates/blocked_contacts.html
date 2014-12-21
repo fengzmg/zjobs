@@ -7,8 +7,7 @@
         </thead>
         <tbody>
         <tr ng-repeat="record in records">
-            <td ng-if="!record.is_editable">[[ record.contact ]]</td>
-            <td ng-if="record.is_editable"><input type="text" ng-model="record.contact"/></td>
+            <td>[[ record.contact ]]</td>
 
             <td ng-if="!record.is_editable">[[ record.block_reason ]]</td>
             <td ng-if="record.is_editable"><input type="text" ng-model="record.block_reason"/></td>

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from os.path import dirname, realpath
 import random
 import sys
@@ -41,6 +43,9 @@ class BaseTestCase(unittest.TestCase):
         database_file = open(test_db_file, 'w+')
         database_file.close()
         AppRunner.datasource = cls.datasource
+        BlockedContact.datasource = cls.datasource
+        JobItem.datasource = cls.datasource
+        RejectionPattern.datasource = cls.datasource
         AppRunner.get_instance().migrate_db()
 
         print 'Done setting up test db..'
@@ -86,12 +91,8 @@ class DatabaseInfraTest(BaseTestCase):
             conn.close()
 
 class JobItemTest(BaseTestCase):
-
-
     def setUp(self):
         self.clean_db()
-        JobItem.datasource = self.datasource
-
         self.job_item = JobItem()
         self.job_item.job_title="Test Job"
         self.job_item.employer_name="Test Job Employer"
@@ -166,11 +167,31 @@ class JobItemTest(BaseTestCase):
         finally:
             conn.close()
 
+    def test_remove_records_matches_rejection_pattern(self):
+        for i in range(0, 20):
+            job_item = JobItem()
+            job_item.job_title='job_item_%d' % i
+            job_item.save()
+
+        # mark the title as blocked
+        RejectionPattern('item_\d+', 'For Testing').save()
+
+        # run the remove action
+        JobItem.remove_records_matches_rejection_pattern()
+
+        conn = self.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT COUNT(*) FROM ' + JobItem.table_name)
+            self.assertEqual(c.fetchone()[0], 0, 'Count of job items should be 0')
+        except:
+            pass
+        finally:
+            conn.close()
 
 class BlockedContactTest(BaseTestCase):
     def setUp(self):
         self.clean_db()
-        BlockedContact.datasource = self.datasource
         self.blocked_contact = BlockedContact('8888888','Just For Testing')
 
     def tearDown(self):
@@ -223,7 +244,6 @@ class BlockedContactTest(BaseTestCase):
 class RejectionPatternTest(BaseTestCase):
     def setUp(self):
         self.clean_db()
-        RejectionPattern.datasource = self.datasource
         self.rejection_pattern = RejectionPattern('[1-9]+', 'Just For Testing')
 
     def tearDown(self):
@@ -268,9 +288,13 @@ class RejectionPatternTest(BaseTestCase):
         finally:
             conn.close()
     def test_should_be_rejected(self):
-        self.rejection_pattern.save()  # saved [1-9]+
+        RejectionPattern('[1-9]+').save()
         self.assertTrue(RejectionPattern.should_be_rejected('9887'), 'input_text should be rejected')
         self.assertFalse(RejectionPattern.should_be_rejected('abcd'), 'input_text should not be rejected')
+        RejectionPattern(u'(?<!非)中介').save()
+        self.assertTrue(RejectionPattern.should_be_rejected(u'中介'), 'input_text should be rejected')
+        self.assertTrue(RejectionPattern.should_be_rejected(u'是中介'), 'input_text should be rejected')
+        self.assertFalse(RejectionPattern.should_be_rejected(u'非中介'), 'input_text should not be rejected')
 
 
 def run_all_tests():
