@@ -11,7 +11,8 @@ import time
 from apscheduler.triggers.cron import CronTrigger
 from app.context import logger, Datasource, Scheduler
 import app.config as config
-from jobcrawler.items import JobItem
+from jobcrawler.items import JobItem, RejectionPattern
+
 
 class CrawlerRunner:
     def _crawl(cls, spider_name=None):
@@ -60,11 +61,11 @@ class AppRunner(object):
                 )
                 ''')
 
-            logger.info("created table and indexes for CRAWLED_JOBS")
-
             c.execute('''
                 CREATE UNIQUE INDEX job_title_idx ON CRAWLED_JOBS(job_title)
             ''')
+
+            logger.info("created table and indexes for CRAWLED_JOBS")
 
             c.execute('DROP TABLE IF EXISTS JOB_REJECTION_RULES')
             c.execute('DROP INDEX IF EXISTS reject_pattern_idx')
@@ -98,7 +99,6 @@ class AppRunner(object):
 
             logger.info("created table and indexes for BLOCKED_CONTACTS")
 
-
             conn.commit()
             logger.info('done create database')
         except Exception as e:
@@ -115,22 +115,20 @@ class AppRunner(object):
         place holder for putting the migrate db scripts -- need to be updated before every release
         :return:
         """
+
+        cls.create_db()
         conn = cls.datasource.get_connection()
         try:
             logger.info('start migrating database')
-            # c = conn.cursor()
-            # c.execute()
-            # conn.commit()
+            for pattern in (config.AGENT_RULE_OUT_PATTERN.split('#') + config.JOB_RULE_OUT_PATTERN.split('#')):
+                RejectionPattern(pattern).save()
             logger.info('done migrating database')
         except Exception as e:
             logger.error('Unable to run migrate_db')
             logger.error(e)
-            conn.rollback()
 
         finally:
             conn.close()
-
-        cls.create_db()
 
 
     @classmethod

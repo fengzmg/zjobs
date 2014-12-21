@@ -16,7 +16,6 @@ from scrapy.item import BaseItem
 
 from app.context import Datasource, logger
 
-import pg8000 as dbi
 import app.config as config
 
 class BaseObject(BaseItem):
@@ -278,6 +277,7 @@ class RejectionPattern(BaseObject):
         except Exception as e:
             logger.error(e)
             logger.info('Unable to remove rejection pattern: %s' % repr(self))
+            conn.rollback()
             raise JobItemDBError(str(e))
         finally:
             conn.close()
