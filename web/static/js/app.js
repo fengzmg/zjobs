@@ -248,12 +248,13 @@ angular.module('myApp', [
     }
 
     $scope.add_new = function(){
-        $scope.records.push({'reject_pattern': '', 'reject_reason': '', 'is_editable': true});
+        $scope.records.push({'reject_pattern': '', 'reject_reason': '', 'is_new': true});
     }
 
     $scope.save = function(record){
         $http.post('/reject_rules/save', record).success(function(data, status, headers, config){
-            record.is_editable = false;
+            record.is_new = false;
+            record.is_modify = false;
         }).error(function(data, status, headers, config){
             alert('Cannot save record');
         });
@@ -272,7 +273,7 @@ angular.module('myApp', [
 
     $scope.modify = function(index){
         var record = $scope.records[index];
-        record.is_editable = true;
+        record.is_modify = true;
     }
 
 
@@ -289,12 +290,13 @@ angular.module('myApp', [
     }
 
     $scope.add_new = function(){
-        $scope.records.push({'contact': '', 'is_editable': true});
+        $scope.records.push({'contact': '', 'is_new': true});
     }
 
     $scope.save = function(record){
         $http.post('/blocked_contacts/save', record).success(function(data, status, headers, config){
-            record.is_editable = false;
+            record.is_new = false;
+            record.is_modify = false;
         }).error(function(data, status, headers, config){
             alert('Cannot save record');
         });
@@ -311,7 +313,7 @@ angular.module('myApp', [
 
     $scope.modify = function(index){
         var record = $scope.records[index];
-        record.is_editable = true;
+        record.is_modify = true;
     }
 
     $scope.fetchData();
