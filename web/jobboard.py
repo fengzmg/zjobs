@@ -61,27 +61,7 @@ def get_jobs():
 
     return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
 
-
-@app.route('/menus', methods=['GET', 'POST'])
-def get_menu():
-    menu_items = {'menu_items': []}
-    menu_items['menu_items'].append(
-        {'label': 'Run Crawler', 'link': '/admin/run_crawler', 'menu_item_id': 'admin_run_crawler'})
-    menu_items['menu_items'].append(
-        {'label': 'Run Emailer', 'link': '/admin/run_emailer', 'menu_item_id': 'admin_run_emailer'})
-    menu_items['menu_items'].append(
-        {'label': 'Run Housekeeper', 'link': '/admin/run_housekeeper', 'menu_item_id': 'admin_run_housekeeper'})
-    menu_items['menu_items'].append(
-        {'label': 'Config Reject Rules', 'link': '/#/reject_rules', 'menu_item_id': 'admin_config_reject_rules'})
-    menu_items['menu_items'].append(
-        {'label': 'Config Blocked Contacts', 'link': '/#/blocked_contacts', 'menu_item_id': 'admin_config_blocked_contacts'})
-    menu_items['menu_items'].append(
-        {'label': 'Download As Excel', 'link': '/extract/jobs/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})
-
-    return json.dumps(menu_items)
-
-
-@app.route('/extract/jobs/<format>')
+@app.route('/jobs/extract/<format>')
 def extract_jobs_as_file(format='xlsx'):
     response = make_response(JobItem.extract_records_as_bytes(format))
     response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs_%s.%s" % (
@@ -108,11 +88,25 @@ def remove_reject_rules():
     reject_pattern.remove()
     return "OK"
 
-@app.route('/extract/reject_rules/<format>')
+@app.route('/reject_rules/extract/<format>')
 def extract_reject_rules_as_file(format='csv'):
     response = make_response(RejectionPattern.extract_records_as_bytes(format))
     response.headers["Content-Disposition"] = "attachment; filename=reject_rules.%s" % format
     return response
+
+@app.route('/reject_rules/import', methods=['POST'])
+def import_reject_rules_from_file():
+    file = request.files['file_to_upload']
+    for record in RejectionPattern.findall():
+        record.remove()
+    app.logger.info('Done removing all existing rejection patterns')
+    count = 0
+    for line in file.readlines():
+        columns = repr(line).split(',')
+        RejectionPattern(columns[0], columns[1]).save()
+        count += 1
+    app.logger.info('Done importing %d rejection rules from %s' % (count, file.filename))
+    return redirect(url_for('index'))
 
 @app.route('/blocked_contacts', methods=['GET', 'POST'])
 def get_blocked_contacts():
@@ -139,7 +133,7 @@ def remove_blocked_contact():
 
     return "OK"
 
-@app.route('/extract/blocked_contacts/<format>')
+@app.route('/blocked_contacts/extract/<format>')
 def extract_blocked_contacts_as_file(format='csv'):
     response = make_response(BlockedContact.extract_records_as_bytes(format))
     response.headers["Content-Disposition"] = "attachment; filename=blocked_contacts.%s" % format
@@ -150,19 +144,33 @@ def re_run_crawler():
     Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_crawler)
     return redirect(url_for('index'))
 
-
 @app.route('/admin/run_housekeeper', methods=['GET'])
 def re_run_housekeeper():
     Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_housekeeper)
     return redirect(url_for('index'))
-
 
 @app.route('/admin/run_emailer', methods=['GET'])
 def re_run_emailer():
     Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_emailer)
     return redirect(url_for('index'))
 
+@app.route('/menus', methods=['GET', 'POST'])
+def get_menu():
+    menu_items = {'menu_items': []}
+    menu_items['menu_items'].append(
+        {'label': 'Run Crawler', 'link': '/admin/run_crawler', 'menu_item_id': 'admin_run_crawler'})
+    menu_items['menu_items'].append(
+        {'label': 'Run Emailer', 'link': '/admin/run_emailer', 'menu_item_id': 'admin_run_emailer'})
+    menu_items['menu_items'].append(
+        {'label': 'Run Housekeeper', 'link': '/admin/run_housekeeper', 'menu_item_id': 'admin_run_housekeeper'})
+    menu_items['menu_items'].append(
+        {'label': 'Config Reject Rules', 'link': '/#/reject_rules', 'menu_item_id': 'admin_config_reject_rules'})
+    menu_items['menu_items'].append(
+        {'label': 'Config Blocked Contacts', 'link': '/#/blocked_contacts', 'menu_item_id': 'admin_config_blocked_contacts'})
+    menu_items['menu_items'].append(
+        {'label': 'Download As Excel', 'link': '/jobs/extract/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})
 
+    return json.dumps(menu_items)
 
 class CustomJsonEncoder(json.JSONEncoder):
 

@@ -238,6 +238,43 @@ angular.module('myApp', [
 
     };
 })
+.directive('rejectRulesFileUpload', function(){
+    return{
+        restrict: 'A',
+        scope: true,
+        link: function(scope, element, attrs){
+            var upload_url = attrs.rejectRulesFileUpload;
+            var modalBox = '<div id="target_modal" class="modal">' +
+                                      '<div class="modal-dialog modal-sm">' +
+                                        '<div class="modal-content">' +
+                                          '<div class="modal-header">' +
+                                            '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>' +
+                                            '<h4 class="modal-title">Please specify the file to import</h4>' +
+                                          '</div>' +
+                                          '<form id="upload_form" action="'+ upload_url +'" method="post" enctype="multipart/form-data">' +
+                                          '<div class="modal-body">' +
+                                            '<input id="file_to_upload" name="file_to_upload" type="file" class="form-control"/>' +
+                                          '</div>' +
+                                          '<div class="modal-footer">' +
+                                            '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>' +
+                                            '<button type="submit" class="btn btn-primary" id="confirm_upload">Import</button>' +
+                                          '</div>' +
+                                          '</form>' +
+                                        '</div><!-- /.modal-content -->' +
+                                      '</div><!-- /.modal-dialog -->' +
+                                    '</div><!-- /.modal -->';
+
+            var target_modal = jQuery(modalBox).modal({
+                'backdrop': 'static',
+                'show': false
+            });
+
+            element.click(function(e){
+                target_modal.modal('show');
+            });
+        }
+    };
+})
 .controller('reject_rulesController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
         $http.post('/reject_rules').success(function(data, status, headers, config){
