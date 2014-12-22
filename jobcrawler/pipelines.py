@@ -30,7 +30,8 @@ class ItemRejectionPatternPipeline(object):
         # check by title
         if RejectionPattern.should_be_rejected(item.job_title):
             raise DropItem('Job matches rejection pattern. Removing...')
-
+        if RejectionPattern.should_be_rejected(item.job_desc):
+            raise DropItem('Job Description matches rejection pattern. Removing...')
         return item
 
 

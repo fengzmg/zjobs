@@ -303,7 +303,7 @@ class JobItem(BaseObject):
         records = cls.findall()
         count = 0
         for record in records:
-            if RejectionPattern.should_be_rejected(record.job_title):
+            if RejectionPattern.should_be_rejected(record.job_title) or RejectionPattern.should_be_rejected(record.job_desc):
                 record.remove()
                 count += 1
         logger.info('cleared %d job items matching the rejection pattern' % count)
