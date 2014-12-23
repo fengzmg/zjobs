@@ -217,7 +217,7 @@ class AppRunner(object):
 
             part = MIMEBase('application', "octet-stream")
             file_format = 'xlsx'
-            part.set_payload(cls.extract_file_as_bytes(file_format))
+            part.set_payload(JobItem.extract_records_as_bytes(file_format))
             logger.info('attached extracted files to the mail...waiting to be sent..')
             Encoders.encode_base64(part)
             part.add_header('Content-Disposition',
