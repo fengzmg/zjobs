@@ -124,7 +124,7 @@ angular.module('myApp', [
 
         },
 
-        template: '<div class="dropdown">' +
+        template: '<div class="dropdown" style="display:inline-block">' +
           '<a class="dropdown-toggle" id="adminMenu" data-toggle="dropdown">' + 
             'Actions' +
             '&nbsp;<span class="glyphicon glyphicon-tasks"></span>' +
@@ -138,6 +138,53 @@ angular.module('myApp', [
 
     };
 }])
+.directive("user", function($http){
+    return {
+        replace: true,
+        link: function(scope, element, attrs){
+
+            var modalBox = '<div id="target_modal" class="modal">' +
+                                      '<div class="modal-dialog">' +
+                                        '<div class="modal-content">' +
+                                          '<div class="modal-header">' +
+                                            '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>' +
+                                            '<h4 class="modal-title">Please specify the login details</h4>' +
+                                          '</div>' +
+
+                                          '<div class="modal-body">' +
+                                            '<div style="margin-bottom: 5px;">' +
+                                                '<label style="width:30%;display:inline-block;">User Name:</label><input id="user_name" name="user_name" type="text" class="form-control" style="width:50%;display:inline-block;"/>' +
+                                            '</div>' +
+                                            '<div style="margin-bottom: 5px;">' +
+                                                '<label style="width:30%;display:inline-block;">Password:</label><input id="user_password" name="user_password" type="password" value="" class="form-control" style="width:50%;display:inline-block;"/>' +
+                                            '</div>' +
+                                            '<div style="margin-bottom: 5px;">' +
+                                                '<div style="width:50%; display:inline-block"><a href="">Register New User</a></div><div style="width:50%;display:inline-block"><a href="">Forgot Password</a></div>' +
+                                            '</div>' +
+                                          '</div>' +
+                                          '<div class="modal-footer">' +
+                                            '<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>' +
+                                            '<button type="button" class="btn btn-success" id="confirm_login">Login</button>' +
+                                          '</div>' +
+
+                                        '</div><!-- /.modal-content -->' +
+                                      '</div><!-- /.modal-dialog -->' +
+                                    '</div><!-- /.modal -->';
+
+            var target_modal = jQuery(modalBox).modal({
+                'backdrop': 'static',
+                'show': false
+            });
+
+            jQuery(element).click(function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                target_modal.modal('show');
+            });
+        },
+        template: '<a href="#">Login <span class="glyphicon glyphicon-off"></span></a>'
+    };
+})
 .directive("rightclick", ['$parse', function($parse, $scope) {
     return {
         restrict: 'A',
