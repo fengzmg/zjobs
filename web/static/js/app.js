@@ -238,12 +238,12 @@ angular.module('myApp', [
 
     };
 })
-.directive('rejectRulesFileUpload', function(){
+.directive('fileUpload', function(){
     return{
         restrict: 'A',
         scope: true,
         link: function(scope, element, attrs){
-            var upload_url = attrs.rejectRulesFileUpload;
+            var upload_url = attrs.fileUpload;
             var modalBox = '<div id="target_modal" class="modal">' +
                                       '<div class="modal-dialog modal-sm">' +
                                         '<div class="modal-content">' +

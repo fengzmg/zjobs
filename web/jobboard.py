@@ -101,8 +101,9 @@ def import_reject_rules_from_file():
         record.remove()
     app.logger.info('Done removing all existing rejection patterns')
     count = 0
+    file.readline()  #for the header, ignore
     for line in file.readlines():
-        columns = repr(line).split(',')
+        columns = line.decode('utf-8').split(',')
         RejectionPattern(columns[0], columns[1]).save()
         count += 1
     app.logger.info('Done importing %d rejection rules from %s' % (count, file.filename))
@@ -138,6 +139,22 @@ def extract_blocked_contacts_as_file(format='csv'):
     response = make_response(BlockedContact.extract_records_as_bytes(format))
     response.headers["Content-Disposition"] = "attachment; filename=blocked_contacts.%s" % format
     return response
+
+@app.route('/blocked_contacts/import', methods=['POST'])
+def import_blocked_contact_from_file():
+    file = request.files['file_to_upload']
+    for record in BlockedContact.findall():
+        record.remove()
+    app.logger.info('Done removing all existing blocked contacts')
+
+    count = 0
+    file.readline()  #for the header, ignore
+    for line in file.readlines():
+        columns = line.decode('utf-8').split(',')
+        BlockedContact(columns[0], columns[1]).save()
+        count += 1
+    app.logger.info('Done importing %d blocked contacts from %s' % (count, file.filename))
+    return redirect(url_for('index'))
 
 @app.route('/admin/run_crawler', methods=['GET'])
 def re_run_crawler():
