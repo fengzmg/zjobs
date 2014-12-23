@@ -244,6 +244,8 @@ angular.module('myApp', [
         scope: true,
         link: function(scope, element, attrs){
             var upload_url = attrs.fileUpload;
+            var redirect_url = attrs.fileUploadRedirectUrl;
+
             var modalBox = '<div id="target_modal" class="modal">' +
                                       '<div class="modal-dialog modal-sm">' +
                                         '<div class="modal-content">' +
@@ -254,10 +256,12 @@ angular.module('myApp', [
                                           '<form id="upload_form" action="'+ upload_url +'" method="post" enctype="multipart/form-data">' +
                                           '<div class="modal-body">' +
                                             '<input id="file_to_upload" name="file_to_upload" type="file" class="form-control"/>' +
+                                            '<input id="redirect_url" name="redirect_url" type="hidden" value="'+ redirect_url +'"/>' +
+                                            '<img id="loader" src="/static/image/ajax-loader.gif" style="display: none;"/>' +
                                           '</div>' +
                                           '<div class="modal-footer">' +
                                             '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>' +
-                                            '<button type="submit" class="btn btn-primary" id="confirm_upload">Import</button>' +
+                                            '<button type="button" class="btn btn-primary" id="confirm_upload">Import</button>' +
                                           '</div>' +
                                           '</form>' +
                                         '</div><!-- /.modal-content -->' +
@@ -271,6 +275,10 @@ angular.module('myApp', [
 
             element.click(function(e){
                 target_modal.modal('show');
+                jQuery('#confirm_upload', target_modal).click(function(e){
+                    jQuery('#loader', target_modal).show();
+                    jQuery('form#upload_form', target_modal).submit();
+                });
             });
         }
     };
