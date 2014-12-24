@@ -31,7 +31,11 @@
             </div>
             <div class="text-right" style="display:inline-block;width:74%;">
                 <div menu></div>
-                <div user></div>
+                {% if g.user.is_authenticated() %}
+                    <span><a href="">{{ g.user.username }}</a>&nbsp;<a href="{{ url_for('logout') }}" class="glyphicon glyphicon-off"></a></span>
+                {% else %}
+                    <span user-login><a href="#">Login <span class="glyphicon glyphicon-off"></span></a></span>
+                {% endif %}
             </div>
         
         </div>

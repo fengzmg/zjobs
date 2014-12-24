@@ -6,9 +6,9 @@ angular.module('myApp', [
   'ngRoute', 'ngSanitize'
 ])
 .config(['$routeProvider', function($routeProvider) {
-    $routeProvider.when('/jobs', {templateUrl: '/jobs.html', controller: 'jobsController'});
-    $routeProvider.when('/reject_rules', {templateUrl: '/reject_rules.html', controller: 'reject_rulesController'});
-    $routeProvider.when('/blocked_contacts', {templateUrl: '/blocked_contacts.html', controller: 'blocked_contactsController'});
+    $routeProvider.when('/jobs', {templateUrl: '/html/jobs', controller: 'jobsController'});
+    $routeProvider.when('/reject_rules', {templateUrl: '/protected/html/reject_rules', controller: 'reject_rulesController'});
+    $routeProvider.when('/blocked_contacts', {templateUrl: '/protected/html/blocked_contacts', controller: 'blocked_contactsController'});
     $routeProvider.otherwise({redirectTo: '/jobs'});
 }])
 .config(function($interpolateProvider) {
@@ -126,7 +126,7 @@ angular.module('myApp', [
 
         template: '<div class="dropdown" style="display:inline-block">' +
           '<a class="dropdown-toggle" id="adminMenu" data-toggle="dropdown">' + 
-            'Actions' +
+            'Menu' +
             '&nbsp;<span class="glyphicon glyphicon-tasks"></span>' +
           '</a>' +
           '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="adminMenu">' +
@@ -138,25 +138,25 @@ angular.module('myApp', [
 
     };
 }])
-.directive("user", function($http){
+.directive("userLogin", function($http){
     return {
-        replace: true,
         link: function(scope, element, attrs){
 
             var modalBox = '<div id="target_modal" class="modal">' +
-                                      '<div class="modal-dialog">' +
+                                      '<div class="modal-dialog" style="width:300px;">' +
                                         '<div class="modal-content">' +
                                           '<div class="modal-header">' +
                                             '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>' +
                                             '<h4 class="modal-title">Please specify the login details</h4>' +
                                           '</div>' +
 
+                                          '<form action="/login" method="post">' +
                                           '<div class="modal-body">' +
                                             '<div style="margin-bottom: 5px;">' +
-                                                '<label style="width:30%;display:inline-block;">User Name:</label><input id="user_name" name="user_name" type="text" class="form-control" style="width:50%;display:inline-block;"/>' +
+                                                '<label style="width:30%;display:inline-block;">User Name:</label><input id="user_name" name="user_name" type="text" class="form-control" style="width:70%;display:inline-block;"/>' +
                                             '</div>' +
                                             '<div style="margin-bottom: 5px;">' +
-                                                '<label style="width:30%;display:inline-block;">Password:</label><input id="user_password" name="user_password" type="password" value="" class="form-control" style="width:50%;display:inline-block;"/>' +
+                                                '<label style="width:30%;display:inline-block;">Password:</label><input id="user_password" name="user_password" type="password" value="" class="form-control" style="width:70%;display:inline-block;"/>' +
                                             '</div>' +
                                             '<div style="margin-bottom: 5px;">' +
                                                 '<div style="width:50%; display:inline-block"><a href="">Register New User</a></div><div style="width:50%;display:inline-block"><a href="">Forgot Password</a></div>' +
@@ -164,9 +164,9 @@ angular.module('myApp', [
                                           '</div>' +
                                           '<div class="modal-footer">' +
                                             '<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>' +
-                                            '<button type="button" class="btn btn-success" id="confirm_login">Login</button>' +
+                                            '<button type="submit" class="btn btn-success" id="confirm_login">Login</button>' +
                                           '</div>' +
-
+                                          '</form>' +
                                         '</div><!-- /.modal-content -->' +
                                       '</div><!-- /.modal-dialog -->' +
                                     '</div><!-- /.modal -->';
@@ -181,8 +181,7 @@ angular.module('myApp', [
                 e.stopPropagation();
                 target_modal.modal('show');
             });
-        },
-        template: '<a href="#">Login <span class="glyphicon glyphicon-off"></span></a>'
+        }
     };
 })
 .directive("rightclick", ['$parse', function($parse, $scope) {
@@ -332,7 +331,7 @@ angular.module('myApp', [
 })
 .controller('reject_rulesController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
-        $http.post('/reject_rules').success(function(data, status, headers, config){
+        $http.get('/reject_rules').success(function(data, status, headers, config){
             $scope.records=data;
         }).error(function(data, status, headers, config){
             alert('Unable to load records');
@@ -374,7 +373,7 @@ angular.module('myApp', [
  }])
  .controller('blocked_contactsController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
-        $http.post('/blocked_contacts').success(function(data, status, headers, config){
+        $http.get('/blocked_contacts').success(function(data, status, headers, config){
             $scope.records=data;
         }).error(function(data, status, headers, config){
             alert('Unable to load records');

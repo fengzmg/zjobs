@@ -85,14 +85,47 @@ class BaseObject(BaseItem):
             os.remove(tmp_file)
 
 
-
-class JobItemDBError(Exception):
+class DatabaseError(Exception):
     def __init__(self, message):
         self.message = message
 
     def __str__(self):
         return repr(self.message)
 
+class User(BaseObject):
+    username = None
+    password = None
+    email = None
+
+    property_names = []
+    table_name = "USERS"
+
+    def __init__(self, username, password, email=None):
+        self.username = username
+        self.password = password
+        self.email = email
+
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return unicode(self.username)
+
+    def get_role(self):
+        return 'admin' if self.username == 'admin' else 'user'
+
+    @classmethod
+    def validate(cls, user=None):
+        if user is not None:
+            return user.username == 'admin' and user.password == 'admin123'
+        else:
+            return False
 
 class JobItem(BaseObject):
     job_title = None
@@ -264,7 +297,7 @@ class JobItem(BaseObject):
             logger.error(e)
             logger.info('Unable to remove job item: %s' % self.job_title)
             conn.rollback()
-            raise JobItemDBError(str(e))
+            raise DatabaseError(str(e))
         finally:
             conn.close()
 
@@ -354,7 +387,7 @@ class RejectionPattern(BaseObject):
             logger.error(e)
             logger.info('Unable to remove rejection pattern: %s' % repr(self))
             conn.rollback()
-            raise JobItemDBError(str(e))
+            raise DatabaseError(str(e))
         finally:
             conn.close()
 
@@ -474,7 +507,7 @@ class BlockedContact(BaseObject):
         except Exception as e:
             logger.error(e)
             logger.error('Unable to remove blocked contact: ' + self.contact)
-            raise JobItemDBError(str(e))
+            raise DatabaseError(str(e))
         finally:
             conn.close()
 
