@@ -126,7 +126,7 @@ angular.module('myApp', [
 
         template: '<div class="dropdown" style="display:inline-block">' +
           '<a class="dropdown-toggle" id="adminMenu" data-toggle="dropdown">' + 
-            'Menu' +
+            'menu' +
             '&nbsp;<span class="glyphicon glyphicon-tasks"></span>' +
           '</a>' +
           '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="adminMenu">' +

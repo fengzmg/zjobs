@@ -28,15 +28,18 @@ app.config['SECRET_KEY'] = '1234567890'
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-def admin_required(func):
-    @wraps(func)
-    def decorated_view(*args, **kwargs):
-        if current_app.login_manager._login_disabled:
+def roles_required(required_role):
+    def wrapper(func):
+
+        @wraps(func)  # use wraps to retain the same function name and docstring
+        def decorated_view(*args, **kwargs):
+            if current_app.login_manager._login_disabled:
+                return func(*args, **kwargs)
+            elif not ( current_user.is_authenticated() and current_user.get_role() == required_role):
+                return current_app.login_manager.unauthorized()
             return func(*args, **kwargs)
-        elif not ( current_user.is_authenticated() and current_user.get_role() == 'admin'):
-            return current_app.login_manager.unauthorized()
-        return func(*args, **kwargs)
-    return decorated_view
+        return decorated_view
+    return wrapper
 
 @login_manager.user_loader
 def load_user(id):
@@ -62,7 +65,7 @@ def render_html(html_file_name):
     return render_template(html_file_name + '.html')
 
 @app.route('/protected/html/<html_file_name>')
-@admin_required
+@roles_required('admin')
 def render_protected_html(html_file_name):
     return render_template(html_file_name + '.html')
 
@@ -126,28 +129,28 @@ def get_reject_rules():
     return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 @app.route('/reject_rules/save', methods=['POST'])
-@admin_required
+@roles_required('admin')
 def save_reject_rules():
     reject_pattern = RejectionPattern.from_dict(request.json)
     reject_pattern.save()
     return "OK"
 
 @app.route('/reject_rules/remove', methods=['POST'])
-@admin_required
+@roles_required('admin')
 def remove_reject_rules():
     reject_pattern = RejectionPattern.from_dict(request.json)
     reject_pattern.remove()
     return "OK"
 
 @app.route('/reject_rules/extract/<format>', methods=['GET'])
-@admin_required
+@roles_required('admin')
 def extract_reject_rules_as_file(format='csv'):
     response = make_response(RejectionPattern.extract_records_as_bytes(format))
     response.headers["Content-Disposition"] = "attachment; filename=reject_rules.%s" % format
     return response
 
 @app.route('/reject_rules/import', methods=['POST'])
-@admin_required
+@roles_required('admin')
 def import_reject_rules_from_file():
     file = request.files['file_to_upload']
     redirect_url = request.form.get('redirect_url', url_for('index'))
@@ -169,14 +172,14 @@ def get_blocked_contacts():
     return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 @app.route('/blocked_contacts/save', methods=['POST'])
-@admin_required
+@roles_required('admin')
 def save_blocked_contact():
     blocked_contact = BlockedContact.from_dict(request.json)
     blocked_contact.save()
     return "OK"
 
 @app.route('/blocked_contacts/remove', methods=['POST'])
-@admin_required
+@roles_required('admin')
 def remove_blocked_contact():
     try:
         blocked_contact = BlockedContact.from_dict(request.json)
@@ -191,14 +194,14 @@ def remove_blocked_contact():
     return "OK"
 
 @app.route('/blocked_contacts/extract/<format>', methods=['GET'])
-@admin_required
+@roles_required('admin')
 def extract_blocked_contacts_as_file(format='csv'):
     response = make_response(BlockedContact.extract_records_as_bytes(format))
     response.headers["Content-Disposition"] = "attachment; filename=blocked_contacts.%s" % format
     return response
 
 @app.route('/blocked_contacts/import', methods=['POST'])
-@admin_required
+@roles_required('admin')
 def import_blocked_contact_from_file():
     file = request.files['file_to_upload']
     redirect_url = request.form.get('redirect_url', url_for('index'))
@@ -216,19 +219,19 @@ def import_blocked_contact_from_file():
     return redirect(redirect_url)
 
 @app.route('/admin/run_crawler', methods=['GET'])
-@admin_required
+@roles_required('admin')
 def re_run_crawler():
     Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_crawler)
     return redirect(url_for('index'))
 
 @app.route('/admin/run_housekeeper', methods=['GET'])
-@admin_required
+@roles_required('admin')
 def re_run_housekeeper():
     Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_housekeeper)
     return redirect(url_for('index'))
 
 @app.route('/admin/run_emailer', methods=['GET'])
-@admin_required
+@roles_required('admin')
 def re_run_emailer():
     Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_emailer)
     return redirect(url_for('index'))
