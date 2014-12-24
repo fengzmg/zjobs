@@ -1,21 +1,25 @@
 # -*- coding: utf-8 -*-
+from flask.globals import current_app
+
 try:
     import simplejson as json
 except ImportError:
     import json
 import datetime
 
-from flask import Flask, redirect, url_for, make_response
+from flask import Flask, redirect, url_for, make_response, request, _app_ctx_stack
 from flask.templating import render_template
-from flask import request
 
-from app.context import Scheduler
+from app.context import Scheduler, logger
 from app.run import AppRunner
-from jobcrawler.items import JobItem, RejectionPattern, BlockedContact, BaseObject
+from jobcrawler.models import JobItem, RejectionPattern, BlockedContact, BaseObject
 
 
 app = Flask(__name__)
 
+# with app.app_context():
+#     print current_app.__dict__
+#     print _app_ctx_stack.__dict__
 
 @app.before_request
 def before_request():
@@ -100,14 +104,14 @@ def import_reject_rules_from_file():
     redirect_url = request.form.get('redirect_url', url_for('index'))
     for record in RejectionPattern.findall():
         record.remove()
-    app.logger.info('Done removing all existing rejection patterns')
+    logger.info('Done removing all existing rejection patterns')
     count = 0
     file.readline()  #for the header, ignore
     for line in file.readlines():
         columns = line.decode('utf-8').split(',')
         RejectionPattern(columns[0], columns[1]).save()
         count += 1
-    app.logger.info('Done importing %d rejection rules from %s' % (count, file.filename))
+    logger.info('Done importing %d rejection rules from %s' % (count, file.filename))
     return redirect(redirect_url)
 
 @app.route('/blocked_contacts', methods=['GET', 'POST'])
@@ -127,7 +131,7 @@ def remove_blocked_contact():
         blocked_contact = BlockedContact.from_dict(request.json)
         blocked_contact.remove()
     except Exception as e:
-        app.logger.error(e)
+        logger.error(e)
         response = make_response()
         response.status = 'internal error'
         response.status_code = 500
@@ -147,7 +151,7 @@ def import_blocked_contact_from_file():
     redirect_url = request.form.get('redirect_url', url_for('index'))
     for record in BlockedContact.findall():
         record.remove()
-    app.logger.info('Done removing all existing blocked contacts')
+    logger.info('Done removing all existing blocked contacts')
 
     count = 0
     file.readline()  #for the header, ignore
@@ -155,7 +159,7 @@ def import_blocked_contact_from_file():
         columns = line.decode('utf-8').split(',')
         BlockedContact(columns[0], columns[1]).save()
         count += 1
-    app.logger.info('Done importing %d blocked contacts from %s' % (count, file.filename))
+    logger.info('Done importing %d blocked contacts from %s' % (count, file.filename))
     return redirect(redirect_url)
 
 @app.route('/admin/run_crawler', methods=['GET'])

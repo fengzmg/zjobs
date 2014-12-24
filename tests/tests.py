@@ -12,7 +12,7 @@ sys.path.append(app_home_dir)
 import unittest
 import app.config as config
 from app.run import AppRunner
-from jobcrawler.items import JobItem, BlockedContact, RejectionPattern
+from jobcrawler.models import JobItem, BlockedContact, RejectionPattern
 #from app.context import  Datasource as TestDatasource
 import sqlite3 as dbi
 

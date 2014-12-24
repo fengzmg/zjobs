@@ -8,7 +8,7 @@ import re
 from scrapy.exceptions import DropItem
 from scrapy import log
 import app.config as config
-from jobcrawler.items import JobItem, BlockedContact, RejectionPattern
+from jobcrawler.models import JobItem, BlockedContact, RejectionPattern
 
 
 class ItemPrintingPipeline(object):

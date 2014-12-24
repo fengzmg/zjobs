@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from scrapy.contrib.spiders.crawl import CrawlSpider
 from scrapy.http.request import Request
-from jobcrawler.items import JobItem, BlockedContact, RejectionPattern
+from jobcrawler.models import JobItem, BlockedContact, RejectionPattern
 import app.config as config
 from scrapy import log
 import re

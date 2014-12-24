@@ -11,7 +11,7 @@ import time
 from apscheduler.triggers.cron import CronTrigger
 from app.context import logger, Datasource, Scheduler
 import app.config as config
-from jobcrawler.items import JobItem
+from jobcrawler.models import JobItem
 
 
 class CrawlerRunner:

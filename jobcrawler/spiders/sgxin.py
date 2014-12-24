@@ -3,7 +3,7 @@ import datetime
 from scrapy.contrib.spiders.crawl import Rule
 from scrapy.contrib.linkextractors import LinkExtractor
 from jobcrawler.spiders.base import BaseSpider
-from jobcrawler.items import JobItem
+from jobcrawler.models import JobItem
 from scrapy.http.request import Request
 import app.config as config
 import re
