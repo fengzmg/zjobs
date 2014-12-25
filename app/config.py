@@ -8,7 +8,6 @@ DATABASE = os.environ.get('DATABASE', 'zjobs')
 DB_USER = os.environ.get('DB_USER', 'zjobs')
 DB_PASSWORD = os.environ.get('DB_PASSWORD', 'zjobs')
 
-TO_ADDRS = ['mengfeng0904@gmail.com', 'cathytheone@live.cn']
 FROM_ADDR = 'zorg.groups@gmail.com'
 
 SMTP_HOST = os.environ.get('SMTP_HOST','smtp.gmail.com')

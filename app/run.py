@@ -11,7 +11,7 @@ import time
 from apscheduler.triggers.cron import CronTrigger
 from app.context import logger, Datasource, Scheduler
 import app.config as config
-from jobcrawler.models import JobItem
+from jobcrawler.models import JobItem, User
 
 
 class CrawlerRunner:
@@ -88,7 +88,7 @@ class AppRunner(object):
 
             c.execute('''
                 CREATE TABLE IF NOT EXISTS BLOCKED_CONTACTS(
-                    contact    text,
+                    contact      text,
                     block_reason text
                 )
                 ''')
@@ -98,6 +98,27 @@ class AppRunner(object):
             ''')
 
             logger.info("created table and indexes for BLOCKED_CONTACTS")
+
+            c.execute('DROP TABLE IF EXISTS USERS')
+            c.execute('DROP INDEX IF EXISTS users_idx')
+
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS USERS(
+                    username            text,
+                    password            text,
+                    email               text,
+                    subscription_status text,
+                    role           text,
+                    last_login_date     date,
+                    register_date       date
+                )
+                ''')
+
+            c.execute('''
+                CREATE UNIQUE INDEX users_idx ON USERS(username)
+            ''')
+
+            logger.info("created table and indexes for USERS")
 
             conn.commit()
             logger.info('done create database')
@@ -120,6 +141,9 @@ class AppRunner(object):
         conn = cls.datasource.get_connection()
         try:
             logger.info('start migrating database')
+            User('admin', 'admin123', role='admin', subscription_status='unsubscribed').save()
+            User('cathy', 'cathy123', 'cathytheone@live.cn').save()
+            User('meng', 'meng123', 'mengfeng0904@gmail.com', role='admin').save()
             logger.info('done migrating database')
         except Exception as e:
             logger.error('Unable to run migrate_db')
@@ -201,7 +225,8 @@ class AppRunner(object):
 
             logger.info('established secure connection to smtp server...')
 
-            toaddrs = config.TO_ADDRS
+            toaddrs = [user.email for user in User.findall() if user.subscription_status == 'subscribed']
+            print toaddrs
             fromaddr = config.FROM_ADDR
 
             current_date_string = datetime.datetime.now().strftime('%Y-%m-%d')
@@ -211,7 +236,8 @@ class AppRunner(object):
 
             msg = MIMEMultipart()
             msg['From'] = fromaddr
-            msg['To'] = ','.join(toaddrs)
+            msg['To'] = ''
+            msg['Cc'] = ','.join(toaddrs)
             msg['Subject'] = message_subject
             msg.attach(MIMEText(message_text))
 

@@ -143,7 +143,7 @@ angular.module('myApp', [
         link: function(scope, element, attrs){
 
             var modalBox = '<div id="target_modal" class="modal">' +
-                                      '<div class="modal-dialog" style="width:300px;">' +
+                                      '<div class="modal-dialog" style="width:350px;">' +
                                         '<div class="modal-content">' +
                                           '<div class="modal-header">' +
                                             '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>' +

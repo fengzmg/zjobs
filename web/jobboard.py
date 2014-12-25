@@ -15,7 +15,7 @@ from flask.templating import render_template
 
 from app.context import Scheduler, logger
 from app.run import AppRunner
-from jobcrawler.models import JobItem, RejectionPattern, BlockedContact, BaseObject, User
+from jobcrawler.models import JobItem, RejectionPattern, BlockedContact, User, CustomJsonEncoder
 
 
 app = Flask(__name__)
@@ -43,7 +43,7 @@ def roles_required(required_role):
 
 @login_manager.user_loader
 def load_user(id):
-    return User(id, '')
+    return User.find(User(username=id))
 
 @app.before_request
 def before_request():
@@ -79,7 +79,7 @@ def login():
     user_name = request.form.get('user_name', '')
     user_password = request.form.get('user_password', '')
     redirect_url = request.form.get('next', url_for('index'))
-    if user_name !='' and user_password !='':
+    if user_name != '' and user_password != '':
         if User.validate(User(user_name, user_password)):
             login_user(User(user_name, user_password))
             return redirect(redirect_url)
@@ -255,13 +255,3 @@ def get_menu():
         {'label': 'Download As Excel', 'link': '/jobs/extract/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})
 
     return json.dumps(menu_items)
-
-class CustomJsonEncoder(json.JSONEncoder):
-
-    def default(self, obj):
-        if isinstance(obj, BaseObject):
-            return obj.__dict__
-        if hasattr(obj, 'isoformat'):
-            return obj.isoformat()
-
-        return obj

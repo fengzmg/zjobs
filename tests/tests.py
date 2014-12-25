@@ -10,10 +10,8 @@ app_home_dir = dirname(dirname(realpath(__file__)))
 sys.path.append(app_home_dir)
 
 import unittest
-import app.config as config
 from app.run import AppRunner
-from jobcrawler.models import JobItem, BlockedContact, RejectionPattern
-#from app.context import  Datasource as TestDatasource
+from jobcrawler.models import JobItem, BlockedContact, RejectionPattern, User
 import sqlite3 as dbi
 
 
@@ -46,6 +44,7 @@ class BaseTestCase(unittest.TestCase):
         BlockedContact.datasource = cls.datasource
         JobItem.datasource = cls.datasource
         RejectionPattern.datasource = cls.datasource
+        User.datasource = cls.datasource
         AppRunner.get_instance().migrate_db()
 
         print 'Done setting up test db..'
@@ -69,6 +68,7 @@ class BaseTestCase(unittest.TestCase):
             c.execute('DELETE FROM ' + JobItem.table_name)
             c.execute('DELETE FROM ' + BlockedContact.table_name)
             c.execute('DELETE FROM ' + RejectionPattern.table_name)
+            c.execute('DELETE FROM ' + User.table_name)
             print 'Cleaned database...'
             conn.commit()
         except:
@@ -312,6 +312,35 @@ class RejectionPatternTest(BaseTestCase):
     @classmethod
     def test_get_classname(cls):
         print cls.__name__
+
+class UserTest(BaseTestCase):
+    def setUp(self):
+        self.clean_db()
+
+    def tearDown(self):
+        pass
+
+    def test_save(self):
+        User('username', 'password', 'meng@db.com').save()
+        conn = self.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT COUNT(*) FROM ' + User.table_name)
+            self.assertEqual(c.fetchone()[0], 1, 'Count of rejection_pattern should be 1')
+        except:
+            pass
+        finally:
+            conn.close()
+
+    def test_findall(self):
+        User('username', 'password', 'meng@db.com', role='admin').save()
+        self.assertEqual(1, len(User.findall()), 'Count of users should be 1')
+
+    def test_validate(self):
+        user = User('username', 'password', 'meng@db.com')
+        user.save()
+        self.assertFalse(User.validate(User('invalid_user', 'pass')), 'user should not be valid')
+        self.assertTrue(User.validate(user), 'user should be valid')
 
 def run_all_tests():
     unittest.main(verbosity=3)

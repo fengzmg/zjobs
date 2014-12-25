@@ -34,7 +34,7 @@
                 {% if g.user.is_authenticated() %}
                     <span><a href="">{{ g.user.username }}</a>&nbsp;<a href="{{ url_for('logout') }}" class="glyphicon glyphicon-off"></a></span>
                 {% else %}
-                    <span user-login><a href="#">Login <span class="glyphicon glyphicon-off"></span></a></span>
+                    <span user-login><a href="#">login <span class="glyphicon glyphicon-off"></span></a></span>
                 {% endif %}
             </div>
         

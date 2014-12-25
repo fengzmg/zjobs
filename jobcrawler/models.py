@@ -84,6 +84,42 @@ class BaseObject(BaseItem):
         finally:
             os.remove(tmp_file)
 
+    @classmethod
+    def findall(cls):
+        conn = cls.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ')
+
+            return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
+        finally:
+            conn.close()
+
+    def save(self):
+        if self:
+            conn = self.connect_db()
+            try:
+                c = conn.cursor()
+
+                c.execute('INSERT INTO ' + self.table_name +
+                          '(' +
+                          ', '.join(self.property_names) +
+                          ') ' +
+                          'VALUES (' + ', '.join(['?'] * len(self.property_names)) + ')',
+                          tuple([getattr(self, property_name) for property_name in self.property_names])
+                          )
+                conn.commit()
+                logger.info('Saved item: %s' % self)
+            except Exception as e:
+                conn.rollback()
+                logger.error('Unable to save the item: %s' % self)
+                logger.error(e)
+            finally:
+                conn.close()
+
+    def __repr__(self):
+        return json.dumps(self, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+
 
 class DatabaseError(Exception):
     def __init__(self, message):
@@ -96,14 +132,21 @@ class User(BaseObject):
     username = None
     password = None
     email = None
+    subscription_status =None
+    role = None
+    last_login_date = None
+    register_date = None
 
-    property_names = []
+    property_names = ['username', 'password', 'email', 'subscription_status', 'role', 'last_login_date', 'register_date']
     table_name = "USERS"
 
-    def __init__(self, username, password, email=None):
+    def __init__(self, username=None, password=None, email=None, role='standard_user', subscription_status='subscribed'):
         self.username = username
         self.password = password
         self.email = email
+        self.role = role
+        self.register_date = datetime.datetime.now()
+        self.subscription_status = subscription_status
 
     def is_authenticated(self):
         return True
@@ -118,14 +161,45 @@ class User(BaseObject):
         return unicode(self.username)
 
     def get_role(self):
-        return 'admin' if self.username == 'admin' else 'user'
+        return self.role
 
     @classmethod
     def validate(cls, user=None):
         if user is not None:
-            return user.username == 'admin' and user.password == 'admin123'
+            if user.username and user.username != '' and user.password and user.password != '':
+                conn = cls.connect_db()
+                try:
+                    c = conn.cursor()
+                    c.execute("SELECT COUNT(*) FROM " + cls.table_name + " WHERE username=? and password=?", (user.username, user.password))
+                    return int(c.fetchone()[0]) > 0
+                except Exception as e:
+                    logger.error('failed to retrieve the item count')
+                    logger.error(e)
+                    return False
+                finally:
+                    conn.close()
+            else:
+                logger.debug('username or password is empty.. hence returning false in validate()')
+                return False
         else:
             return False
+
+    @classmethod
+    def find(cls, criteria_obj=None):
+        conn = cls.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE username=?',
+                      (criteria_obj.username,))
+            return cls.from_dict(dict(zip(cls.property_names, c.fetchone())))
+        except Exception as e:
+            logger.error(e)
+            logger.info('returning None as exception occurs in User.find()')
+            return None
+        finally:
+            conn.close()
+
+
 
 class JobItem(BaseObject):
     job_title = None
@@ -144,45 +218,6 @@ class JobItem(BaseObject):
                       'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
 
     table_name = 'CRAWLED_JOBS'
-
-    def __repr__(self):
-        return repr(self.__dict__)
-
-    def save(self):
-        if self:
-            conn = self.connect_db()
-            try:
-                c = conn.cursor()
-
-                c.execute('INSERT INTO ' + self.table_name +
-                          '(' +
-                          'job_title, job_desc, job_details_link, job_location, job_country,' +
-                          'salary, employer_name, publish_date, contact, source, crawled_date' +
-                          ') ' +
-                          'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                          (
-                              self.job_title,
-                              self.job_desc,
-                              self.job_details_link,
-                              self.job_location,
-                              self.job_country,
-                              self.salary,
-                              self.employer_name,
-                              self.publish_date,
-                              self.contact,
-                              self.source,
-                              self.crawled_date
-
-                          ))
-                logger.info('Saved job: %s' % self.job_title)
-
-                conn.commit()
-            except Exception as e:
-                conn.rollback()
-                logger.error('Unable to save the job: %s' % self.job_title)
-                logger.error(e)
-            finally:
-                conn.close()
 
     @classmethod
     def is_exists(cls, item=None):
@@ -260,16 +295,6 @@ class JobItem(BaseObject):
         finally:
             conn.close()
 
-    @classmethod
-    def findall(cls):
-        conn = cls.connect_db()
-        try:
-            c = conn.cursor()
-            c.execute(
-                'SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC')
-            return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
-        finally:
-            conn.close()
 
     @classmethod
     def count(cls, criteria=None):
@@ -341,6 +366,9 @@ class JobItem(BaseObject):
                 count += 1
         logger.info('cleared %d job items matching the rejection pattern' % count)
 
+    def __repr__(self):
+        return "{ 'job_title': %s }" % self.job_title
+
 
 class RejectionPattern(BaseObject):
     property_names = ['reject_pattern', 'reject_reason']
@@ -353,17 +381,6 @@ class RejectionPattern(BaseObject):
     def __init__(self, reject_pattern=None, reject_reason=None):
         self.reject_pattern = reject_pattern
         self.reject_reason = reject_reason
-
-    @classmethod
-    def findall(cls):
-        conn = cls.connect_db()
-        try:
-            c = conn.cursor()
-            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ')
-
-            return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
-        finally:
-            conn.close()
 
     @classmethod
     def find(cls, reject_pattern):
@@ -391,32 +408,6 @@ class RejectionPattern(BaseObject):
         finally:
             conn.close()
 
-    def save(self):
-        if self:
-            conn = self.connect_db()
-            try:
-                self.remove()  # remove the old record and insert again
-                c = conn.cursor()
-
-                c.execute('INSERT INTO ' + self.table_name +
-                          '(' +
-                          'reject_pattern, reject_reason' +
-                          ') ' +
-                          'VALUES (?, ?)',
-                          (
-                              self.reject_pattern,
-                              self.reject_reason
-                          ))
-                conn.commit()
-                logger.info('Saved rejection pattern: %s' % repr(self))
-            except Exception as e:
-                logger.error(e)
-                conn.rollback()
-                logger.info('Unable to save the rejection pattern: %s' % repr(self))
-                # raise JobItemDBError('Unable to save the job')
-            finally:
-                conn.close()
-
     @classmethod
     def should_be_rejected(cls, input_text=''):
         if input_text is None or input_text == '':
@@ -438,9 +429,6 @@ class RejectionPattern(BaseObject):
             logger.error('returning False as exception occurs in is_contact_blocked()')
             return False
 
-    def __repr__(self):
-        return json.dumps(self.__dict__)
-
 
 class BlockedContact(BaseObject):
     property_names = ['contact', 'block_reason']
@@ -454,16 +442,6 @@ class BlockedContact(BaseObject):
         self.contact = contact
         self.block_reason = block_reason
 
-    @classmethod
-    def findall(cls):
-        conn = cls.connect_db()
-        try:
-            c = conn.cursor()
-            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ')
-
-            return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
-        finally:
-            conn.close()
 
     @classmethod
     def find(cls, contact):
@@ -511,36 +489,15 @@ class BlockedContact(BaseObject):
         finally:
             conn.close()
 
-    def save(self):
-        if self:
-            conn = self.connect_db()
-            try:
-                self.remove()  # remove the old record, and insert new
-                c = conn.cursor()
+class CustomJsonEncoder(json.JSONEncoder):
 
-                c.execute('INSERT INTO ' + self.table_name +
-                          '(' +
-                          'contact, block_reason' +
-                          ') ' +
-                          'VALUES (?, ?)',
-                          (
-                              self.contact, self.block_reason
-                          ))
+    def default(self, obj):
+        if isinstance(obj, BaseObject):
+            return obj.__dict__
+        if hasattr(obj, 'isoformat'):
+            return obj.isoformat()
 
-                conn.commit()
-                logger.info('Saved BlockedContact: %s' % repr(self))
-
-            except Exception as e:
-                logger.error(e)
-                conn.rollback()
-                logger.info('Unable to save the BlockedContact: %s' % repr(self))
-            finally:
-                conn.close()
-
-    def __repr__(self):
-        return json.dumps(self.__dict__)
-
-
+        return obj
 
 
 
