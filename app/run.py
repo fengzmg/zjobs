@@ -141,9 +141,6 @@ class AppRunner(object):
         conn = cls.datasource.get_connection()
         try:
             logger.info('start migrating database')
-            User('admin', 'admin123', role='admin', subscription_status='unsubscribed').save()
-            User('cathy', 'cathy123', 'cathytheone@live.cn').save()
-            User('meng', 'meng123', 'mengfeng0904@gmail.com', role='admin').save()
             logger.info('done migrating database')
         except Exception as e:
             logger.error('Unable to run migrate_db')
