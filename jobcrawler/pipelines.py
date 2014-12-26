@@ -7,7 +7,7 @@
 import re
 from scrapy.exceptions import DropItem
 from scrapy import log
-import app.config as config
+from app.context import Config as config
 from jobcrawler.models import JobItem, BlockedContact, RejectionPattern
 
 

@@ -16,7 +16,7 @@ from scrapy.item import BaseItem
 
 from app.context import Datasource, logger
 
-import app.config as config
+from app.context import Config as config
 
 
 class BaseObject(BaseItem):
@@ -154,8 +154,23 @@ class BaseObject(BaseItem):
             finally:
                 conn.close()
 
+    @classmethod
+    def count(cls, criteria=None):
+
+        conn = cls.connect_db()
+        try:
+            c = conn.cursor()
+            if criteria:
+                c.execute('SELECT COUNT(*) FROM ' + cls.table_name)
+            else:
+                c.execute('SELECT COUNT(*) FROM ' + cls.table_name)
+
+            return c.fetchone()[0]
+        finally:
+            conn.close()
+
     def __repr__(self):
-        return json.dumps  (self, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+        return json.dumps(self, cls=CustomJsonEncoder, sort_keys=True, indent=4)
 
 
 class DatabaseError(Exception):
@@ -291,7 +306,6 @@ class JobItem(BaseObject):
             logger.debug('item is None.. hence returning true in is_older_required()')
             return True
 
-
     @classmethod
     def find_with_pagination(cls, page_request={'page_no': 1, 'size': 25, 'criteria': None}):
 
@@ -316,22 +330,6 @@ class JobItem(BaseObject):
                     ) AS RESULT LIMIT ? OFFSET ?  ', (size, size * (page_no - 1)))
 
             return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
-        finally:
-            conn.close()
-
-
-    @classmethod
-    def count(cls, criteria=None):
-
-        conn = cls.connect_db()
-        try:
-            c = conn.cursor()
-            if criteria:
-                c.execute('SELECT COUNT(*) FROM ' + cls.table_name)
-            else:
-                c.execute('SELECT COUNT(*) FROM ' + cls.table_name)
-
-            return c.fetchone()[0]
         finally:
             conn.close()
 

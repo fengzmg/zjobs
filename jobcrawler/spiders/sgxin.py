@@ -5,8 +5,6 @@ from scrapy.contrib.linkextractors import LinkExtractor
 from jobcrawler.spiders.base import BaseSpider
 from jobcrawler.models import JobItem
 from scrapy.http.request import Request
-import app.config as config
-import re
 
 
 
