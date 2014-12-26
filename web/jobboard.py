@@ -28,6 +28,7 @@ app.config['SECRET_KEY'] = '1234567890'
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+
 def roles_required(required_role):
     def wrapper(func):
 

@@ -18,8 +18,13 @@ from app.context import Datasource, logger
 
 import app.config as config
 
+
 class BaseObject(BaseItem):
+
     datasource = Datasource.get_instance()
+    property_names = []
+    key_properties = []
+    table_name = None
 
     @classmethod
     def connect_db(self):
@@ -95,6 +100,38 @@ class BaseObject(BaseItem):
         finally:
             conn.close()
 
+    @classmethod
+    def find(cls, criteria_obj=None):
+        conn = cls.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE ' + ' AND '.join([ '%s=?' % property  for property in cls.key_properties]),
+                      tuple([getattr(criteria_obj, property) for property in cls.key_properties]))
+            return cls.from_dict(dict(zip(cls.property_names, c.fetchone())))
+        except Exception as e:
+            logger.error(e)
+            logger.info('returning None as exception occurs in User.find()')
+            return None
+        finally:
+            conn.close()
+
+    def remove(self):
+        conn = self.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute('DELETE FROM ' + self.table_name + ' WHERE ' + ' AND '.join(['%s=?' % property for property in self.key_properties]),
+                      tuple([getattr(self, property) for property in self.key_properties]))
+            conn.commit()
+            logger.info('Removed: %s' % repr(self))
+        except Exception as e:
+            logger.error(e)
+            logger.info('Unable to remove: %s' % repr(self))
+            conn.rollback()
+            raise DatabaseError(str(e))
+        finally:
+            conn.close()
+
+
     def save(self):
         if self:
             conn = self.connect_db()
@@ -128,6 +165,7 @@ class DatabaseError(Exception):
     def __str__(self):
         return repr(self.message)
 
+
 class User(BaseObject):
     username = None
     password = None
@@ -138,6 +176,7 @@ class User(BaseObject):
     register_date = None
 
     property_names = ['username', 'password', 'email', 'subscription_status', 'role', 'last_login_date', 'register_date']
+    key_properties = ['username']
     table_name = "USERS"
 
     def __init__(self, username=None, password=None, email=None, role='standard_user', subscription_status='subscribed'):
@@ -184,22 +223,6 @@ class User(BaseObject):
         else:
             return False
 
-    @classmethod
-    def find(cls, criteria_obj=None):
-        conn = cls.connect_db()
-        try:
-            c = conn.cursor()
-            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE username=?',
-                      (criteria_obj.username,))
-            return cls.from_dict(dict(zip(cls.property_names, c.fetchone())))
-        except Exception as e:
-            logger.error(e)
-            logger.info('returning None as exception occurs in User.find()')
-            return None
-        finally:
-            conn.close()
-
-
 
 class JobItem(BaseObject):
     job_title = None
@@ -216,6 +239,7 @@ class JobItem(BaseObject):
 
     property_names = ['job_title', 'job_desc', 'job_details_link', 'job_location', 'job_country',
                       'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
+    key_properties = ['job_title']
 
     table_name = 'CRAWLED_JOBS'
 
@@ -311,21 +335,6 @@ class JobItem(BaseObject):
         finally:
             conn.close()
 
-    def remove(self):
-        conn = self.connect_db()
-        try:
-            c = conn.cursor()
-            c.execute('DELETE FROM ' + self.table_name + ' WHERE job_title=?', (self.job_title, ))
-            conn.commit()
-            logger.info('Removed job item: %s' % self.job_title)
-        except Exception as e:
-            logger.error(e)
-            logger.info('Unable to remove job item: %s' % self.job_title)
-            conn.rollback()
-            raise DatabaseError(str(e))
-        finally:
-            conn.close()
-
     @classmethod
     def remove_old_records(cls, retention_days=14):
         conn = cls.connect_db()
@@ -372,7 +381,7 @@ class JobItem(BaseObject):
 
 class RejectionPattern(BaseObject):
     property_names = ['reject_pattern', 'reject_reason']
-
+    key_properties = ['reject_pattern']
     table_name = 'JOB_REJECTION_RULES'
 
     reject_pattern = None
@@ -381,32 +390,6 @@ class RejectionPattern(BaseObject):
     def __init__(self, reject_pattern=None, reject_reason=None):
         self.reject_pattern = reject_pattern
         self.reject_reason = reject_reason
-
-    @classmethod
-    def find(cls, reject_pattern):
-        conn = cls.connect_db()
-        try:
-            c = conn.cursor()
-            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE reject_pattern=?',
-                      (reject_pattern,))
-            return cls.from_dict(dict(zip(cls.property_names, c.fetchone())))
-        finally:
-            conn.close()
-
-    def remove(self):
-        conn = self.connect_db()
-        try:
-            c = conn.cursor()
-            c.execute('DELETE FROM ' + self.table_name + ' WHERE reject_pattern=?', (self.reject_pattern, ))
-            conn.commit()
-            logger.info('Removed rejection pattern: %s' % repr(self))
-        except Exception as e:
-            logger.error(e)
-            logger.info('Unable to remove rejection pattern: %s' % repr(self))
-            conn.rollback()
-            raise DatabaseError(str(e))
-        finally:
-            conn.close()
 
     @classmethod
     def should_be_rejected(cls, input_text=''):
@@ -432,7 +415,7 @@ class RejectionPattern(BaseObject):
 
 class BlockedContact(BaseObject):
     property_names = ['contact', 'block_reason']
-
+    key_properties = ['contact']
     table_name = 'BLOCKED_CONTACTS'
 
     contact = None
@@ -441,22 +424,6 @@ class BlockedContact(BaseObject):
     def __init__(self, contact=None, block_reason=None):
         self.contact = contact
         self.block_reason = block_reason
-
-
-    @classmethod
-    def find(cls, contact):
-        conn = cls.connect_db()
-        try:
-            c = conn.cursor()
-            c.execute('SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' WHERE contact=?',
-                      (contact,))
-            return cls.from_dict(dict(zip(cls.property_names, c.fetchone())))
-        except Exception as e:
-            logger.error(e)
-            logger.info('returning None as exception occurs in BlockedContact.find()')
-            return None
-        finally:
-            conn.close()
 
     @classmethod
     def is_contact_blocked(cls, contact=''):
@@ -475,19 +442,6 @@ class BlockedContact(BaseObject):
         finally:
             conn.close()
 
-    def remove(self):
-        conn = self.connect_db()
-        try:
-            c = conn.cursor()
-            c.execute('DELETE FROM ' + self.table_name + ' WHERE contact=?', (self.contact, ))
-            conn.commit()
-            logger.info('Removed blocked contact: ' + self.contact)
-        except Exception as e:
-            logger.error(e)
-            logger.error('Unable to remove blocked contact: ' + self.contact)
-            raise DatabaseError(str(e))
-        finally:
-            conn.close()
 
 class CustomJsonEncoder(json.JSONEncoder):
 

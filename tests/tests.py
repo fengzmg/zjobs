@@ -129,6 +129,10 @@ class JobItemTest(BaseTestCase):
         print 'Job Items', records
         self.assertEqual(2, len(records))
 
+    def test_find(self):
+        self.job_item.save()
+        print JobItem.find(self.job_item)
+
     def test_find_with_pagination(self):
         for i in range(0, 20):
             job_item = JobItem()
@@ -192,7 +196,7 @@ class JobItemTest(BaseTestCase):
 class BlockedContactTest(BaseTestCase):
     def setUp(self):
         self.clean_db()
-        self.blocked_contact = BlockedContact('8888888','Just For Testing')
+        self.blocked_contact = BlockedContact('8888888', 'Just For Testing')
 
     def tearDown(self):
         pass
@@ -220,7 +224,7 @@ class BlockedContactTest(BaseTestCase):
 
     def test_find(self):
         self.blocked_contact.save()
-        result = BlockedContact.find(self.blocked_contact.contact)
+        result = BlockedContact.find(self.blocked_contact)
         self.assertEqual(self.blocked_contact.contact, result.contact, 'Item found should be the same as saved')
 
 
@@ -240,6 +244,7 @@ class BlockedContactTest(BaseTestCase):
     def test_is_contact_blocked(self):
         self.blocked_contact.save()
         self.assertTrue(BlockedContact.is_contact_blocked(self.blocked_contact.contact), 'Contact should been blocked')
+
 
 class RejectionPatternTest(BaseTestCase):
     def setUp(self):
@@ -272,7 +277,7 @@ class RejectionPatternTest(BaseTestCase):
 
     def test_find(self):
         self.rejection_pattern.save()
-        result = RejectionPattern.find(self.rejection_pattern.reject_pattern)
+        result = RejectionPattern.find(self.rejection_pattern)
         self.assertEqual(self.rejection_pattern.reject_pattern, result.reject_pattern, 'Item found should be the same as saved')
 
     def test_remove(self):
@@ -313,6 +318,7 @@ class RejectionPatternTest(BaseTestCase):
     def test_get_classname(cls):
         print cls.__name__
 
+
 class UserTest(BaseTestCase):
     def setUp(self):
         self.clean_db()
@@ -341,6 +347,13 @@ class UserTest(BaseTestCase):
         user.save()
         self.assertFalse(User.validate(User('invalid_user', 'pass')), 'user should not be valid')
         self.assertTrue(User.validate(user), 'user should be valid')
+
+    def test_find(self):
+        user = User('username', 'password', 'meng@db.com')
+        user.save()
+
+        print User.find(user)
+
 
 def run_all_tests():
     unittest.main(verbosity=3)
