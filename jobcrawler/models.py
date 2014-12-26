@@ -122,10 +122,10 @@ class BaseObject(BaseItem):
             c.execute('DELETE FROM ' + self.table_name + ' WHERE ' + ' AND '.join(['%s=?' % property for property in self.key_properties]),
                       tuple([getattr(self, property) for property in self.key_properties]))
             conn.commit()
-            logger.info('Removed: %s' % repr(self))
+            logger.info('Removed: %s' % self)
         except Exception as e:
             logger.error(e)
-            logger.info('Unable to remove: %s' % repr(self))
+            logger.info('Unable to remove: %s' % self)
             conn.rollback()
             raise DatabaseError(str(e))
         finally:
@@ -155,7 +155,7 @@ class BaseObject(BaseItem):
                 conn.close()
 
     def __repr__(self):
-        return json.dumps(self, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+        return json.dumps  (self, cls=CustomJsonEncoder, sort_keys=True, indent=4)
 
 
 class DatabaseError(Exception):
@@ -352,18 +352,13 @@ class JobItem(BaseObject):
 
     @classmethod
     def remove_blocked_records(cls):
-        conn = cls.connect_db()
-        try:
-            c = conn.cursor()
-            c.execute(
-                "DELETE FROM " + cls.table_name + " WHERE contact IN (SELECT contact FROM " + BlockedContact.table_name + ")")
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            logger.error('Unable to remove agent records')
-            logger.error(e)
-        finally:
-            conn.close()
+        records = cls.findall()
+        count = 0
+        for record in records:
+            if BlockedContact.is_contact_blocked(record.contact):
+                record.remove()
+                count += 1
+        logger.info('cleared %d job items with blocked contacts' % count)
 
     @classmethod
     def remove_records_matches_rejection_pattern(cls):

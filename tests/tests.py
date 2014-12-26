@@ -151,12 +151,12 @@ class JobItemTest(BaseTestCase):
     def test_remove_blocked_records(self):
         for i in range(0, 20):
             job_item = JobItem()
-            job_item.job_title='job_item_%d' % i
+            job_item.job_title=u'人员_%d' % i
             job_item.contact = str(random.randint(90000000, 99999999))
             job_item.save()
 
             # mark the contact as blocked
-            BlockedContact(job_item.contact, 'For Testing').save()
+            BlockedContact(job_item.contact, u'人员').save()
 
         # run the remove action
         JobItem.remove_blocked_records()
@@ -174,11 +174,11 @@ class JobItemTest(BaseTestCase):
     def test_remove_records_matches_rejection_pattern(self):
         for i in range(0, 20):
             job_item = JobItem()
-            job_item.job_title='job_item_%d' % i
+            job_item.job_title=u'人员_%d' % i
             job_item.save()
 
         # mark the title as blocked
-        RejectionPattern('item_\d+', 'For Testing').save()
+        RejectionPattern(u'人员_\d+', 'For Testing').save()
 
         # run the remove action
         JobItem.remove_records_matches_rejection_pattern()
@@ -196,7 +196,7 @@ class JobItemTest(BaseTestCase):
 class BlockedContactTest(BaseTestCase):
     def setUp(self):
         self.clean_db()
-        self.blocked_contact = BlockedContact('8888888', 'Just For Testing')
+        self.blocked_contact = BlockedContact('8888888', u'中介')
 
     def tearDown(self):
         pass
@@ -215,7 +215,7 @@ class BlockedContactTest(BaseTestCase):
 
     def test_find_all(self):
         self.blocked_contact.save()
-        another_blocked_contact = BlockedContact('99999999', 'Just Another Item for testing')
+        another_blocked_contact = BlockedContact('99999999', u'中介')
         another_blocked_contact.save()
 
         records = BlockedContact.findall()
@@ -249,18 +249,22 @@ class BlockedContactTest(BaseTestCase):
 class RejectionPatternTest(BaseTestCase):
     def setUp(self):
         self.clean_db()
-        self.rejection_pattern = RejectionPattern('[1-9]+', 'Just For Testing')
+        self.rejection_pattern = RejectionPattern('[1-9]+', u'人员')
 
     def tearDown(self):
         pass
 
     def test_save(self):
-        self.rejection_pattern.save()
+        RejectionPattern('Something').save()
+        RejectionPattern(u'人员', None).save()
+
+        print RejectionPattern.findall()
+
         conn = self.connect_db()
         try:
             c = conn.cursor()
             c.execute('SELECT COUNT(*) FROM ' + RejectionPattern.table_name)
-            self.assertEqual(c.fetchone()[0], 1, 'Count of rejection_pattern should be 1')
+            self.assertEqual(c.fetchone()[0], 2, 'Count of rejection_pattern should be 2')
         except:
             pass
         finally:
@@ -268,7 +272,7 @@ class RejectionPatternTest(BaseTestCase):
 
     def test_find_all(self):
         self.rejection_pattern.save()
-        another_rejection_pattern = RejectionPattern('[a-z]+', 'Just Another Item for testing')
+        another_rejection_pattern = RejectionPattern('[a-z]+', u'人员')
         another_rejection_pattern.save()
 
         records = RejectionPattern.findall()

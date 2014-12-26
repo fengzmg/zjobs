@@ -161,7 +161,7 @@ def import_reject_rules_from_file():
     count = 0
     file.readline()  #for the header, ignore
     for line in file.readlines():
-        columns = line.decode('utf-8').split(',')
+        columns = line.rstrip('\r\n').rstrip('\n').decode('utf-8').split(',')  # remove the end of line
         RejectionPattern(columns[0], columns[1]).save()
         count += 1
     logger.info('Done importing %d rejection rules from %s' % (count, file.filename))
@@ -213,7 +213,7 @@ def import_blocked_contact_from_file():
     count = 0
     file.readline()  #for the header, ignore
     for line in file.readlines():
-        columns = line.decode('utf-8').split(',')
+        columns = line.rstrip('\r\n').rstrip('\n').decode('utf-8').split(',')
         BlockedContact(columns[0], columns[1]).save()
         count += 1
     logger.info('Done importing %d blocked contacts from %s' % (count, file.filename))

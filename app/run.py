@@ -187,9 +187,9 @@ class AppRunner(object):
     @classmethod
     def run_housekeeper(cls):
         logger.info('start running housekeeper..')
-        logger.info('start removing records older than 14 days..')
+        logger.info('start removing records older than %s days..' % config.HOUSEKEEPING_RECORD_ORDLER_THAN)
         JobItem.remove_old_records(retention_days=config.HOUSEKEEPING_RECORD_ORDLER_THAN)
-        logger.info('done removing records older than 14 days..')
+        logger.info('done removing records older than %s days..' % config.HOUSEKEEPING_RECORD_ORDLER_THAN)
 
         logger.info('start removing records posted by blocked contacts..')
         JobItem.remove_blocked_records()
