@@ -2,6 +2,7 @@
 import os
 from os.path import dirname, realpath
 import sys
+
 app_home_dir = dirname(dirname(realpath(__file__)))
 sys.path.append(app_home_dir)  # setup sys path to use the current app modules
 
@@ -12,7 +13,8 @@ from apscheduler.triggers.cron import CronTrigger
 from app.context import logger, Datasource, Scheduler
 from app.context import Config as config
 from jobcrawler.models import JobItem, User
-
+import jobcrawler
+import app
 
 class CrawlerRunner:
     def _crawl(cls, spider_name=None):

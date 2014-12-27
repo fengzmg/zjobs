@@ -9,6 +9,7 @@ angular.module('myApp', [
     $routeProvider.when('/jobs', {templateUrl: '/html/jobs', controller: 'jobsController'});
     $routeProvider.when('/reject_rules', {templateUrl: '/protected/html/reject_rules', controller: 'reject_rulesController'});
     $routeProvider.when('/blocked_contacts', {templateUrl: '/protected/html/blocked_contacts', controller: 'blocked_contactsController'});
+    $routeProvider.when('/configs', {templateUrl: '/protected/html/configs', controller: 'configsController'});
     $routeProvider.otherwise({redirectTo: '/jobs'});
 }])
 .config(function($interpolateProvider) {
@@ -109,6 +110,7 @@ angular.module('myApp', [
                 'admin_run_emailer':'glyphicon glyphicon-envelope',
                 'admin_config_reject_rules': 'glyphicon glyphicon-cog',
                 'admin_config_blocked_contacts': 'glyphicon glyphicon-wrench',
+                'admin_config_app_settings': 'glyphicon glyphicon-wrench',
                 'extract_jobs_xlsx':'glyphicon glyphicon-floppy-disk'
             }
 
@@ -406,6 +408,20 @@ angular.module('myApp', [
         var record = $scope.records[index];
         record.is_modify = true;
     }
+
+    $scope.fetchData();
+
+ }])
+ .controller('configsController', ['$scope','$http', function($scope, $http) {
+    $scope.fetchData = function(){
+        $http.get('/configs').success(function(data, status, headers, config){
+            $scope.records=data;
+        }).error(function(data, status, headers, config){
+            alert('Unable to load records');
+        });
+    }
+
+    $scope.subtitle = 'Configs';
 
     $scope.fetchData();
 

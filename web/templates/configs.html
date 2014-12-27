@@ -1,0 +1,16 @@
+<div>
+    <h4 class="text-center" style="margin-bottom:20px;">Application Settings</h4>
+    <table class="table table-bordered table-striped table-hover" style="width:50%; margin:0 auto;">
+        <thead>
+        <tr>
+            <th>Property</th><th>Value</th>
+        </tr>
+        </thead>
+        <tbody>
+       <tr ng-repeat="record in records">
+            <td>[[ record.property ]]</td>
+            <td>[[ record.value ]]</td>
+        </tr>
+        </tbody>
+    </table>
+</div>

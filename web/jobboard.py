@@ -2,7 +2,7 @@
 from functools import wraps
 from flask.globals import current_app
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from werkzeug.exceptions import abort
+import jobcrawler
 
 try:
     import simplejson as json
@@ -13,7 +13,9 @@ import datetime
 from flask import Flask, redirect, url_for, make_response, request, _app_ctx_stack, g
 from flask.templating import render_template
 
+import app as app_context
 from app.context import Scheduler, logger
+from app.context import Config
 from app.run import AppRunner
 from jobcrawler.models import JobItem, RejectionPattern, BlockedContact, User, CustomJsonEncoder
 
@@ -219,6 +221,14 @@ def import_blocked_contact_from_file():
     logger.info('Done importing %d blocked contacts from %s' % (count, file.filename))
     return redirect(redirect_url)
 
+
+@app.route('/configs', methods=['GET'])
+@roles_required('admin')
+def get_config():
+    return json.dumps([{'property': key, 'value': value} for (key, value) in Config.__dict__.items() if not key.startswith('__')],
+                      default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+
 @app.route('/admin/run_crawler', methods=['GET'])
 @roles_required('admin')
 def re_run_crawler():
@@ -251,6 +261,8 @@ def get_menu():
             {'label': 'Config Reject Rules', 'link': '/#/reject_rules', 'menu_item_id': 'admin_config_reject_rules'})
         menu_items['menu_items'].append(
             {'label': 'Config Blocked Contacts', 'link': '/#/blocked_contacts', 'menu_item_id': 'admin_config_blocked_contacts'})
+        menu_items['menu_items'].append(
+            {'label': 'Config App Setting', 'link': '/#/configs', 'menu_item_id': 'admin_config_app_settings'})
 
     menu_items['menu_items'].append(
         {'label': 'Download As Excel', 'link': '/jobs/extract/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})
