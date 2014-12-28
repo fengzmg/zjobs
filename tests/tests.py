@@ -342,6 +342,14 @@ class UserTest(BaseTestCase):
         finally:
             conn.close()
 
+    def test_update(self):
+        User('username', 'password', 'meng@db.com').save()
+        User('username', 'another', 'anther@db.com').save()
+
+        user = User.find(User(username='username'))
+        print user
+        self.assertEqual(u'another@db.com', user.email)
+
     def test_findall(self):
         User('username', 'password', 'meng@db.com', role='admin').save()
         self.assertEqual(1, len(User.findall()), 'Count of users should be 1')

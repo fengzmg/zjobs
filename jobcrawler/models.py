@@ -134,6 +134,8 @@ class BaseObject(BaseItem):
 
     def save(self):
         if self:
+            self.remove()
+
             conn = self.connect_db()
             try:
                 c = conn.cursor()

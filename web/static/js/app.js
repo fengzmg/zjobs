@@ -10,6 +10,7 @@ angular.module('myApp', [
     $routeProvider.when('/reject_rules', {templateUrl: '/protected/html/reject_rules', controller: 'reject_rulesController'});
     $routeProvider.when('/blocked_contacts', {templateUrl: '/protected/html/blocked_contacts', controller: 'blocked_contactsController'});
     $routeProvider.when('/configs', {templateUrl: '/protected/html/configs', controller: 'configsController'});
+    $routeProvider.when('/users', {templateUrl: '/protected/html/users', controller: 'usersController'});
     $routeProvider.otherwise({redirectTo: '/jobs'});
 }])
 .config(function($interpolateProvider) {
@@ -110,7 +111,8 @@ angular.module('myApp', [
                 'admin_run_emailer':'glyphicon glyphicon-envelope',
                 'admin_config_reject_rules': 'glyphicon glyphicon-cog',
                 'admin_config_blocked_contacts': 'glyphicon glyphicon-wrench',
-                'admin_config_app_settings': 'glyphicon glyphicon-wrench',
+                'admin_config_app_settings': 'glyphicon glyphicon-asterisk',
+                'admin_config_users': 'glyphicon glyphicon-user',
                 'extract_jobs_xlsx':'glyphicon glyphicon-floppy-disk'
             }
 
@@ -144,24 +146,24 @@ angular.module('myApp', [
     return {
         link: function(scope, element, attrs){
 
-            var modalBox = '<div id="target_modal" class="modal">' +
+            var login_modalBox = '<div id="target_login_modal" class="modal">' +
                                       '<div class="modal-dialog" style="width:350px;">' +
                                         '<div class="modal-content">' +
                                           '<div class="modal-header">' +
                                             '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>' +
-                                            '<h4 class="modal-title">Please specify the login details</h4>' +
+                                            '<h4 class="modal-title">Login</h4>' +
                                           '</div>' +
 
                                           '<form action="/login" method="post">' +
                                           '<div class="modal-body">' +
                                             '<div style="margin-bottom: 5px;">' +
-                                                '<label style="width:30%;display:inline-block;">User Name:</label><input id="user_name" name="user_name" type="text" class="form-control" style="width:70%;display:inline-block;"/>' +
+                                                '<label style="width:30%;display:inline-block;">User Name:</label><input id="username" name="username" type="text" class="form-control" style="width:70%;display:inline-block;"/>' +
                                             '</div>' +
                                             '<div style="margin-bottom: 5px;">' +
-                                                '<label style="width:30%;display:inline-block;">Password:</label><input id="user_password" name="user_password" type="password" value="" class="form-control" style="width:70%;display:inline-block;"/>' +
+                                                '<label style="width:30%;display:inline-block;">Password:</label><input id="password" name="password" type="password" value="" class="form-control" style="width:70%;display:inline-block;"/>' +
                                             '</div>' +
                                             '<div style="margin-bottom: 5px;">' +
-                                                '<div style="width:50%; display:inline-block"><a href="">Register New User</a></div><div style="width:50%;display:inline-block"><a href="">Forgot Password</a></div>' +
+                                                '<div style="width:50%; display:inline-block"><a href="#" id="register_user_link">Register New User</a></div><div style="width:50%;display:inline-block"><a href="">Forgot Password</a></div>' +
                                             '</div>' +
                                           '</div>' +
                                           '<div class="modal-footer">' +
@@ -173,15 +175,57 @@ angular.module('myApp', [
                                       '</div><!-- /.modal-dialog -->' +
                                     '</div><!-- /.modal -->';
 
-            var target_modal = jQuery(modalBox).modal({
+             var register_modalBox = '<div id="target_register_modal" class="modal">' +
+                                      '<div class="modal-dialog" style="width:350px;">' +
+                                        '<div class="modal-content">' +
+                                          '<div class="modal-header">' +
+                                            '<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>' +
+                                            '<h4 class="modal-title">Create User</h4>' +
+                                          '</div>' +
+
+                                          '<form action="/users/register" method="post">' +
+                                          '<div class="modal-body">' +
+                                            '<div style="margin-bottom: 5px;">' +
+                                                '<label style="width:30%;display:inline-block;">User Name:</label><input id="username" name="username" type="text" class="form-control" style="width:70%;display:inline-block;"/>' +
+                                            '</div>' +
+                                            '<div style="margin-bottom: 5px;">' +
+                                                '<label style="width:30%;display:inline-block;">Password:</label><input id="password" name="password" type="password" value="" class="form-control" style="width:70%;display:inline-block;"/>' +
+                                            '</div>' +
+                                            '<div style="margin-bottom: 5px;">' +
+                                                '<label style="width:30%;display:inline-block;">Email:</label><input id="email" name="email" type="text" value="" class="form-control" style="width:70%;display:inline-block;"/>' +
+                                            '</div>' +
+
+                                          '</div>' +
+                                          '<div class="modal-footer">' +
+                                            '<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>' +
+                                            '<button type="submit" class="btn btn-success" id="confirm_register">Register</button>' +
+                                          '</div>' +
+                                          '</form>' +
+                                        '</div><!-- /.modal-content -->' +
+                                      '</div><!-- /.modal-dialog -->' +
+                                    '</div><!-- /.modal -->';
+
+            var target_login_modal = jQuery(login_modalBox).modal({
                 'backdrop': 'static',
                 'show': false
+            });
+
+            var target_register_modal = jQuery(register_modalBox).modal({
+                'backdrop': 'static',
+                'show': false
+            });
+
+            jQuery('#register_user_link', target_login_modal).click(function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                target_login_modal.modal('hide');
+                target_register_modal.modal('show');
             });
 
             jQuery(element).click(function(e){
                 e.preventDefault();
                 e.stopPropagation();
-                target_modal.modal('show');
+                target_login_modal.modal('show');
             });
         }
     };
@@ -421,7 +465,39 @@ angular.module('myApp', [
         });
     }
 
-    $scope.subtitle = 'Configs';
+    $scope.fetchData();
+
+ }])
+ .controller('usersController', ['$scope','$http', function($scope, $http) {
+    $scope.fetchData = function(){
+        $http.get('/users').success(function(data, status, headers, config){
+            $scope.records=data;
+        }).error(function(data, status, headers, config){
+            alert('Unable to load records');
+        });
+    }
+
+     $scope.save = function(record){
+        $http.post('/users/save', record).success(function(data, status, headers, config){
+            record.is_modify = false;
+        }).error(function(data, status, headers, config){
+            alert('Cannot save record');
+        });
+    }
+
+    $scope.remove = function(index){
+        var record = $scope.records[index];
+        $http.post('/users/remove', record).success(function(data, status, headers, config){
+            $scope.records.splice(index, 1);
+        }).error(function(data, status, headers, config){
+            alert('Cannot remove record');
+        });
+    }
+
+    $scope.modify = function(index){
+        var record = $scope.records[index];
+        record.is_modify = true;
+    }
 
     $scope.fetchData();
 

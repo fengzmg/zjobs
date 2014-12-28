@@ -1,0 +1,33 @@
+<div>
+    <h4 class="text-center" style="margin-bottom:20px;">Application Users</h4>
+    <table class="table table-bordered table-striped table-hover" style="width:50%; margin:0 auto;">
+        <thead>
+        <tr>
+            <th>Username</th><th>Email</th><th>Subscription_Status</th>
+            <th>Role</th><th>Register_Date</th><th>Last_Login_Date</th><th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+       <tr ng-repeat="record in records">
+            <td>[[ record.username ]]</td>
+            <td ng-if="!record.is_modify">[[ record.email ]]</td>
+            <td ng-if="record.is_modify"><input type="text" ng-model="record.email"/></td>
+
+            <td ng-if="!record.is_modify">[[ record.subscription_status ]]</td>
+            <td ng-if="record.is_modify"><input type="text" ng-model="record.subscription_status"/></td>
+
+            <td ng-if="!record.is_modify">[[ record.role ]]</td>
+            <td ng-if="record.is_modify"><input type="text" ng-model="record.role"/></td>
+
+            <td>[[ record.register_date ]]</td>
+            <td>[[ record.last_login_date ]]</td>
+
+           <td ng-if="!record.is_modify">
+                <span class="glyphicon glyphicon-trash inline_icon_btn" ng-click="remove($index)"></span>
+                <span class="glyphicon glyphicon-edit inline_icon_btn" ng-click="modify($index)"></span>
+            </td>
+            <td ng-if="record.is_modify"><span class="glyphicon glyphicon-floppy-disk inline_icon_btn" ng-click="save(record)"></span></td>
+        </tr>
+        </tbody>
+    </table>
+</div>

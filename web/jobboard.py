@@ -44,9 +44,6 @@ def roles_required(required_role):
         return decorated_view
     return wrapper
 
-@login_manager.user_loader
-def load_user(id):
-    return User.find(User(username=id))
 
 @app.before_request
 def before_request():
@@ -67,20 +64,27 @@ def index():
 def render_html(html_file_name):
     return render_template(html_file_name + '.html')
 
+
 @app.route('/protected/html/<html_file_name>')
 @roles_required('admin')
 def render_protected_html(html_file_name):
     return render_template(html_file_name + '.html')
+
 
 @app.route('/robots.txt')
 def robots():
     return render_template('robots.txt')
 
 
+@login_manager.user_loader
+def load_user(id):
+    return User.find(User(username=id))
+
+
 @app.route('/login', methods=['POST'])
 def login():
-    user_name = request.form.get('user_name', '')
-    user_password = request.form.get('user_password', '')
+    user_name = request.form.get('username', '')
+    user_password = request.form.get('password', '')
     redirect_url = request.form.get('next', url_for('index'))
     if user_name != '' and user_password != '':
         if User.validate(User(user_name, user_password)):
@@ -91,10 +95,12 @@ def login():
     else:
         return redirect(url_for('index'))
 
+
 @app.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('index'))
+
 
 @app.route('/jobs', methods=['GET', 'POST'])
 def get_jobs():
@@ -125,7 +131,7 @@ def extract_jobs_as_file(format='xlsx'):
 
 
 @app.route('/reject_rules', methods=['GET'])
-@login_required
+@roles_required('admin')
 def get_reject_rules():
 
     records = RejectionPattern.findall()
@@ -181,6 +187,7 @@ def save_blocked_contact():
     blocked_contact.save()
     return "OK"
 
+
 @app.route('/blocked_contacts/remove', methods=['POST'])
 @roles_required('admin')
 def remove_blocked_contact():
@@ -189,7 +196,7 @@ def remove_blocked_contact():
         blocked_contact.remove()
     except Exception as e:
         logger.error(e)
-        response = make_response()
+        response = make_response(e)
         response.status = 'internal error'
         response.status_code = 500
         return response
@@ -221,6 +228,48 @@ def import_blocked_contact_from_file():
     logger.info('Done importing %d blocked contacts from %s' % (count, file.filename))
     return redirect(redirect_url)
 
+
+@app.route('/users', methods=['GET'])
+@roles_required('admin')
+def get_users():
+    records = User.findall()
+    return json.dumps(records, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+
+@app.route('/users/save', methods=['POST'])
+@roles_required('admin')
+def save_users():
+    User.from_dict(request.json).save()
+    return "OK"
+
+@app.route('/users/register', methods=['POST'])
+def register_user():
+    username = request.form.get('username', '')
+    password = request.form.get('password', '')
+    email = request.form.get('email', '')
+
+    if User.find(User(username=username)) is not None:
+        response = make_response('internal error - User %s already exists' % username)
+        response.status = 'internal error - User %s already exists' % username
+        response.status_code = 500
+        return response
+    else:
+        User(username=username, password=password, email=email).save()
+
+    return redirect(url_for('index'))
+
+@app.route('/users/remove', methods=['POST'])
+@roles_required('admin')
+def remove_user():
+    try:
+        User.from_dict(request.json).remove()
+    except Exception as e:
+        logger.error(e)
+        response = make_response(e)
+        response.status = 'internal error'
+        response.status_code = 500
+        return response
+
+    return "OK"
 
 @app.route('/configs', methods=['GET'])
 @roles_required('admin')
@@ -263,6 +312,8 @@ def get_menu():
             {'label': 'Config Blocked Contacts', 'link': '/#/blocked_contacts', 'menu_item_id': 'admin_config_blocked_contacts'})
         menu_items['menu_items'].append(
             {'label': 'Config App Setting', 'link': '/#/configs', 'menu_item_id': 'admin_config_app_settings'})
+        menu_items['menu_items'].append(
+            {'label': 'Manage Users', 'link': '/#/users', 'menu_item_id': 'admin_config_users'})
 
     menu_items['menu_items'].append(
         {'label': 'Download As Excel', 'link': '/jobs/extract/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})
