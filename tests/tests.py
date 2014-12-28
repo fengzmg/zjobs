@@ -344,11 +344,11 @@ class UserTest(BaseTestCase):
 
     def test_update(self):
         User('username', 'password', 'meng@db.com').save()
-        User('username', 'another', 'anther@db.com').save()
+        User('username', 'another', 'another@db.com').save()
 
         user = User.find(User(username='username'))
         print user
-        self.assertEqual(u'another@db.com', user.email)
+        self.assertEqual('another@db.com', user.email)
 
     def test_findall(self):
         User('username', 'password', 'meng@db.com', role='admin').save()
