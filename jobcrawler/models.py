@@ -24,6 +24,7 @@ class BaseObject(BaseItem):
     datasource = Datasource.get_instance()
     property_names = []
     key_properties = []
+    order_properties = []
     table_name = None
 
     @classmethod
@@ -171,6 +172,34 @@ class BaseObject(BaseItem):
         finally:
             conn.close()
 
+    @classmethod
+    def find_with_pagination(cls, page_request={'page_no': 1, 'size': 25, 'criteria': None}):
+
+        size = page_request.get('size', 25)
+        page_no = page_request.get('page_no', 1)
+        criteria = page_request.get('criteria', None)
+
+        conn = cls.connect_db()
+
+        try:
+            c = conn.cursor()
+
+            if not criteria:
+
+                c.execute('SELECT * FROM ( \
+                        SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name +
+                          ' ORDER BY ' + ', '.join(['%s %s' % (property, order) for (property, order) in cls.order_properties]) +
+                        ') AS RESULT LIMIT ? OFFSET ?  ', (size, size * (page_no - 1) ))
+            else:
+                # TODO need to add the criteria handling
+                c.execute('SELECT * FROM ( \
+                        SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
+                    ) AS RESULT LIMIT ? OFFSET ?  ', (size, size * (page_no - 1)))
+
+            return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
+        finally:
+            conn.close()
+
     def __repr__(self):
         return json.dumps(self, cls=CustomJsonEncoder, sort_keys=True, indent=4)
 
@@ -194,6 +223,7 @@ class User(BaseObject):
 
     property_names = ['username', 'password', 'email', 'subscription_status', 'role', 'last_login_date', 'register_date']
     key_properties = ['username']
+    order_properties = [('username', 'ASC')]
     table_name = "USERS"
 
     def __init__(self, username=None, password=None, email=None, role='standard_user', subscription_status='subscribed'):
@@ -258,6 +288,8 @@ class JobItem(BaseObject):
                       'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
     key_properties = ['job_title']
 
+    order_properties = [('publish_date', 'DESC')]
+
     table_name = 'CRAWLED_JOBS'
 
     @classmethod
@@ -309,33 +341,6 @@ class JobItem(BaseObject):
             return True
 
     @classmethod
-    def find_with_pagination(cls, page_request={'page_no': 1, 'size': 25, 'criteria': None}):
-
-        size = page_request.get('size', 25)
-        page_no = page_request.get('page_no', 1)
-        criteria = page_request.get('criteria', None)
-
-        conn = cls.connect_db()
-
-        try:
-            c = conn.cursor()
-
-            if not criteria:
-
-                c.execute('SELECT * FROM ( \
-                        SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
-                    ) AS RESULT LIMIT ? OFFSET ?  ', (size, size * (page_no - 1) ))
-            else:
-                # TODO need to add the criteria handling
-                c.execute('SELECT * FROM ( \
-                        SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
-                    ) AS RESULT LIMIT ? OFFSET ?  ', (size, size * (page_no - 1)))
-
-            return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
-        finally:
-            conn.close()
-
-    @classmethod
     def remove_old_records(cls, retention_days=14):
         conn = cls.connect_db()
         try:
@@ -377,6 +382,7 @@ class JobItem(BaseObject):
 class RejectionPattern(BaseObject):
     property_names = ['reject_pattern', 'reject_reason']
     key_properties = ['reject_pattern']
+    order_properties = [('reject_pattern', 'ASC')]
     table_name = 'JOB_REJECTION_RULES'
 
     reject_pattern = None
@@ -411,6 +417,7 @@ class RejectionPattern(BaseObject):
 class BlockedContact(BaseObject):
     property_names = ['contact', 'block_reason']
     key_properties = ['contact']
+    order_properties = [('contact', 'ASC')]
     table_name = 'BLOCKED_CONTACTS'
 
     contact = None

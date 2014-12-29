@@ -139,10 +139,16 @@ class JobItemTest(BaseTestCase):
             job_item.job_title='job_item_%d' % i
             job_item.save()
 
-        records = JobItem.find_with_pagination(page_request={'page_no':2, 'size': 10})
+        records = JobItem.find_with_pagination(page_request={'page_no': 2, 'size': 10})
 
         print 'Job Items', records
         self.assertEqual(10, len(records))
+
+    def test_iter_listOfTuple(self):
+        list_of_tuples = [('key', 'value'), ('key1', 'value1')]
+
+        print [key + ' ' + value for (key, value) in list_of_tuples]
+
 
     def test_is_exists(self):
         self.job_item.save()
@@ -245,6 +251,14 @@ class BlockedContactTest(BaseTestCase):
         self.blocked_contact.save()
         self.assertTrue(BlockedContact.is_contact_blocked(self.blocked_contact.contact), 'Contact should been blocked')
 
+    def test_find_with_pagination(self):
+        for i in range(0, 20):
+            BlockedContact('%d' % i, '').save()
+
+        records = BlockedContact.find_with_pagination(page_request={'page_no': 2, 'size': 10})
+
+        print 'items', records
+        self.assertEqual(10, len(records))
 
 class RejectionPatternTest(BaseTestCase):
     def setUp(self):
@@ -323,6 +337,16 @@ class RejectionPatternTest(BaseTestCase):
         print cls.__name__
 
 
+    def test_find_with_pagination(self):
+        for i in range(0, 20):
+            RejectionPattern('Reject_pattern_%d' % i, '').save()
+
+        records = RejectionPattern.find_with_pagination(page_request={'page_no': 2, 'size': 10})
+
+        print 'items', records
+        self.assertEqual(10, len(records))
+
+
 class UserTest(BaseTestCase):
     def setUp(self):
         self.clean_db()
@@ -365,6 +389,15 @@ class UserTest(BaseTestCase):
         user.save()
 
         print User.find(user)
+
+    def test_find_with_pagination(self):
+        for i in range(0, 20):
+            User('User_%d' % i, '').save()
+
+        records = User.find_with_pagination(page_request={'page_no': 2, 'size': 10})
+
+        print 'items', records
+        self.assertEqual(10, len(records))
 
 
 def run_all_tests():
