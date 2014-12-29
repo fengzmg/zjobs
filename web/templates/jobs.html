@@ -11,11 +11,20 @@
         <tbody>
         <tr ng-repeat="job in jobs">
             <td><span ng-bind-html="job.source | displayAsIcon"></span></td>
-            <td><a href="[[job.job_details_link]]" target="_blank" tooltip title="[[ job.job_desc ]]" >[[ job.job_title ]]</a></td>
+            {% if g.user.is_authenticated() and g.user.get_role() == 'admin' %}
+                <td><span job-context-menu><a href="[[job.job_details_link]]" target="_blank" tooltip title="[[ job.job_desc ]]" >[[ job.job_title ]]</a></span></td>
+            {% else %}
+                <td><span><a href="[[job.job_details_link]]" target="_blank" tooltip title="[[ job.job_desc ]]" >[[ job.job_title ]]</a></span></td>
+            {% endif %}
+
             <td>[[ job.job_location ]]</td></td>
             <!-- <td><span ng-bind-html="job.contact | displayAsPhoneLink" rightclick="markAsAgentContact(job.contact)"></span></td> -->
             <td style="min-width:150px;">
-                <span ng-bind-html="job.contact | displayAsPhoneLink" contact-contextmenu style="display:inline-block;"></span>
+                {% if g.user.is_authenticated() and g.user.get_role() == 'admin' %}
+                    <span ng-bind-html="job.contact | displayAsPhoneLink" contact-context-menu style="display:inline-block;"></span>
+                {% else %}
+                    <span ng-bind-html="job.contact | displayAsPhoneLink" style="display:inline-block;"></span>
+                {% endif %}
                 &nbsp;
                 <span ng-if="isContactBlocked(job.contact)" class="glyphicon glyphicon-warning-sign" style="display:inline-block;"></span>
             </td>

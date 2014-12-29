@@ -251,7 +251,7 @@ angular.module('myApp', [
 
     };
 }])
-.directive("contactContextmenu", function($parse, $timeout, $http) {
+.directive("contactContextMenu", function($parse, $timeout, $http) {
     return {
         restrict: 'A',
         scope: true,
@@ -317,11 +317,16 @@ angular.module('myApp', [
                 });
             }, 100);
 
+            jQuery(element).click(function(e){
+                jQuery('.dropdown-toggle', element).removeAttr('data-toggle');
+            });
+
             element.bind('contextmenu', function(event) {
                 
                 scope.$apply(function() {
                     event.stopPropagation();
                     event.preventDefault();
+                    jQuery('.dropdown-toggle', element).attr('data-toggle', 'dropdown');
                     jQuery('.dropdown-toggle', element).dropdown('toggle');
                 });
             });
@@ -329,6 +334,51 @@ angular.module('myApp', [
         }
 
     };
+})
+.directive('jobContextMenu', function($http, $timeout){
+    return{
+        restrict: 'A',
+        scope: true,
+        link: function(scope, element, attrs) {
+
+            element.bind('contextmenu', function(e){
+                jQuery('.dropdown-toggle', element).attr('data-toggle', 'dropdown');
+                jQuery('.dropdown-toggle', element).dropdown('toggle');
+                return false;
+            });
+
+           jQuery(element).click(function(e){
+                jQuery('.dropdown-toggle', element).removeAttr('data-toggle');
+            });
+
+            $timeout(function(){
+
+                var job_title = jQuery('a', element).text();
+                var template='<div class="dropdown">' +
+                      '<div class="dropdown-toggle" id="dropdownContextMenu"  aria-expanded="true">' +
+                        element.html() +
+                      '</div>' +
+                      '<ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownContextMenu">' +
+                        '<li role="presentation">' +
+                            '<a role="menuitem" tabindex="-1" class="context-menu-item_remove_job" href="#"><span class="glyphicon glyphicon-trash">&nbsp;</span>Remove Job</a>'+
+
+                        '</li>' +
+                      '</ul>' +
+                    '</div>';
+
+                jQuery(element).html(template);
+
+                jQuery('a.context-menu-item_remove_job', element).click(function(e){
+                    scope.$apply(function(){
+                        e.stopPropagation();
+                        e.preventDefault();
+                        scope.remove({'job_title': job_title });
+                    });
+                });
+
+            }, 100);
+        }
+    }
 })
 .directive('fileUpload', function(){
     return{
@@ -546,6 +596,17 @@ angular.module('myApp', [
 
     //setup the watch function for the pagination
     $scope.$watch('page_request', $scope.paginationListener, true)
+
+    $scope.remove = function(job_item){
+        $http.post('/jobs/remove', job_item).success(
+            function(data, status, headers, config){
+                //alert('Marked ' + contact.contact + ' as blocked contact');
+                $window.location.reload();
+            }
+            ).error(function(data, status, headers, config){
+                alert('Unable to remove ' + job_item.job_title);
+            });
+    }
 
     $scope.markAsBlockedContact = function(contact){
         $http.post('/blocked_contacts/save', contact).success(

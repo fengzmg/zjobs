@@ -121,6 +121,12 @@ def get_jobs():
 
     return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
 
+@app.route('/jobs/remove', methods=['POST'])
+@roles_required('admin')
+def remove_jobs():
+    JobItem.from_dict(request.json).remove()
+    return "OK"
+
 @app.route('/jobs/extract/<format>', methods=['GET'])
 def extract_jobs_as_file(format='xlsx'):
     response = make_response(JobItem.extract_records_as_bytes(format))
@@ -140,15 +146,13 @@ def get_reject_rules():
 @app.route('/reject_rules/save', methods=['POST'])
 @roles_required('admin')
 def save_reject_rules():
-    reject_pattern = RejectionPattern.from_dict(request.json)
-    reject_pattern.save()
+    RejectionPattern.from_dict(request.json).save()
     return "OK"
 
 @app.route('/reject_rules/remove', methods=['POST'])
 @roles_required('admin')
 def remove_reject_rules():
-    reject_pattern = RejectionPattern.from_dict(request.json)
-    reject_pattern.remove()
+    RejectionPattern.from_dict(request.json).remove
     return "OK"
 
 @app.route('/reject_rules/extract/<format>', methods=['GET'])
@@ -183,8 +187,7 @@ def get_blocked_contacts():
 @app.route('/blocked_contacts/save', methods=['POST'])
 @roles_required('admin')
 def save_blocked_contact():
-    blocked_contact = BlockedContact.from_dict(request.json)
-    blocked_contact.save()
+    BlockedContact.from_dict(request.json).save()
     return "OK"
 
 
