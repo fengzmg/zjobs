@@ -723,7 +723,7 @@ angular.module('myApp', [
 
     $scope.loadBlockedContacts = function(){
         $http.get('/blocked_contacts').success(function(data, status, headers, config){
-            $scope.agents = data;
+            $scope.blocked_contacts = data;
         }).error(function(data, status, headers, config){
             alert('Unable to load agents list');
         });
@@ -732,7 +732,7 @@ angular.module('myApp', [
     $scope.isContactBlocked = function(contact){
 
         var isBlocked = false;
-        angular.forEach($scope.agents, function(item, index){
+        angular.forEach($scope.blocked_contacts, function(item, index){
 
             if( contact === item.contact ){
                 isBlocked = true;

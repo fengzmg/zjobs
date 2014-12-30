@@ -102,7 +102,7 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/jobs', methods=['GET', 'POST'])
+@app.route('/jobs', methods=['POST'])
 def get_jobs():
     # Getting the pagination information
     page_request = request.json
@@ -136,7 +136,7 @@ def extract_jobs_as_file(format='xlsx'):
     return response
 
 
-@app.route('/reject_rules', methods=['GET', 'POST'])
+@app.route('/reject_rules', methods=['POST'])
 @roles_required('admin')
 def get_reject_rules():
 
@@ -196,22 +196,27 @@ def import_reject_rules_from_file():
 
 @app.route('/blocked_contacts', methods=['GET', 'POST'])
 def get_blocked_contacts():
-    # Getting the pagination information
-    page_request = request.json
-    paged_result = {'page_request': page_request}
 
-    size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
-    page_no = int(page_request.get('page_no', 1)) if page_request else 1
+    if request.method == 'POST':
+        # Getting the pagination information
+        page_request = request.json
+        paged_result = {'page_request': page_request}
 
-    paged_result['content'] = BlockedContact.find_with_pagination({'page_no': page_no, 'size': size})
+        size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
+        page_no = int(page_request.get('page_no', 1)) if page_request else 1
 
-    paged_result['total_count'] = BlockedContact.count()
+        paged_result['content'] = BlockedContact.find_with_pagination({'page_no': page_no, 'size': size})
 
-    paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
-        paged_result['total_count'] / size
+        paged_result['total_count'] = BlockedContact.count()
+
+        paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
+            paged_result['total_count'] / size
 
 
-    return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+        return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+
+    elif request.method == 'GET':
+        return json.dumps(BlockedContact.findall(), cls=CustomJsonEncoder, sort_keys=True, indent=4)
 
 
 @app.route('/blocked_contacts/save', methods=['POST'])
@@ -262,7 +267,7 @@ def import_blocked_contact_from_file():
     return redirect(redirect_url)
 
 
-@app.route('/users', methods=['GET', 'POST'])
+@app.route('/users', methods=['POST'])
 @roles_required('admin')
 def get_users():
     # Getting the pagination information
