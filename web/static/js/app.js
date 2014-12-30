@@ -503,7 +503,7 @@ angular.module('myApp', [
  .controller('blocked_contactsController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
         $http.post('/blocked_contacts', $scope.page_request).success(function(data, status, headers, config){
-             $scope.paged_result = data;
+            $scope.paged_result = data;
             $scope.records=$scope.paged_result.content;
         }).error(function(data, status, headers, config){
             alert('Unable to load records');
@@ -587,8 +587,9 @@ angular.module('myApp', [
  }])
  .controller('usersController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
-        $http.get('/users').success(function(data, status, headers, config){
-            $scope.records=data;
+        $http.post('/users', $scope.page_request).success(function(data, status, headers, config){
+            $scope.paged_result = data;
+            $scope.records=$scope.paged_result.content;
         }).error(function(data, status, headers, config){
             alert('Unable to load records');
         });
@@ -616,7 +617,41 @@ angular.module('myApp', [
         record.is_modify = true;
     }
 
-    $scope.fetchData();
+    $scope.page_request = {
+        'page_no': 1,
+        'size': 25,
+    }
+
+    $scope.page_size_options = [25, 50, 100]
+
+    $scope.paginationListener = function(newPageRequest, oldPageRequest){
+
+        if(newPageRequest.page_no > 0 ){
+            $scope.fetchData();
+        }
+    }
+
+    $scope.toPreviousPage = function(){
+        $scope.page_request.page_no = parseInt($scope.page_request.page_no);
+        var current_page_no = $scope.page_request.page_no;
+
+        if(current_page_no > 1){
+            $scope.page_request.page_no = $scope.page_request.page_no - 1;
+        }
+    }
+
+    $scope.toNextPage = function(){
+        $scope.page_request.page_no = parseInt($scope.page_request.page_no);
+        var current_page_no = $scope.page_request.page_no;
+
+        if( current_page_no < $scope.paged_result.total_pages){
+            $scope.page_request.page_no = $scope.page_request.page_no + 1;
+        }
+    }
+
+    //setup the watch function for the pagination
+    $scope.$watch('page_request', $scope.paginationListener, true)
+
 
  }])
 .controller('jobsController', ['$scope','$http', '$route', '$window', function($scope, $http, $route, $window) {

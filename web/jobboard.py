@@ -262,11 +262,24 @@ def import_blocked_contact_from_file():
     return redirect(redirect_url)
 
 
-@app.route('/users', methods=['GET'])
+@app.route('/users', methods=['GET', 'POST'])
 @roles_required('admin')
 def get_users():
-    records = User.findall()
-    return json.dumps(records, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+    # Getting the pagination information
+    page_request = request.json
+    paged_result = {'page_request': page_request}
+
+    size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
+    page_no = int(page_request.get('page_no', 1)) if page_request else 1
+
+    paged_result['content'] = User.find_with_pagination({'page_no': page_no, 'size': size})
+
+    paged_result['total_count'] = User.count()
+
+    paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
+        paged_result['total_count'] / size
+
+    return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
 
 @app.route('/users/save', methods=['POST'])
 @roles_required('admin')
