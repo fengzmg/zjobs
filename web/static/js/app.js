@@ -427,8 +427,9 @@ angular.module('myApp', [
 })
 .controller('reject_rulesController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
-        $http.get('/reject_rules').success(function(data, status, headers, config){
-            $scope.records=data;
+        $http.post('/reject_rules', $scope.page_request).success(function(data, status, headers, config){
+            $scope.paged_result = data;
+            $scope.records=$scope.paged_result.content;
         }).error(function(data, status, headers, config){
             alert('Unable to load records');
         });
@@ -463,14 +464,47 @@ angular.module('myApp', [
         record.is_modify = true;
     }
 
+    $scope.page_request = {
+        'page_no': 1,
+        'size': 25,
+    }
 
-    $scope.fetchData();
+    $scope.page_size_options = [25, 50, 100]
+
+    $scope.paginationListener = function(newPageRequest, oldPageRequest){
+
+        if(newPageRequest.page_no > 0 ){
+            $scope.fetchData();
+        }
+    }
+
+    $scope.toPreviousPage = function(){
+        $scope.page_request.page_no = parseInt($scope.page_request.page_no);
+        var current_page_no = $scope.page_request.page_no;
+
+        if(current_page_no > 1){
+            $scope.page_request.page_no = $scope.page_request.page_no - 1;
+        }
+    }
+
+    $scope.toNextPage = function(){
+        $scope.page_request.page_no = parseInt($scope.page_request.page_no);
+        var current_page_no = $scope.page_request.page_no;
+
+        if( current_page_no < $scope.paged_result.total_pages){
+            $scope.page_request.page_no = $scope.page_request.page_no + 1;
+        }
+    }
+
+    //setup the watch function for the pagination
+    $scope.$watch('page_request', $scope.paginationListener, true)
 
  }])
  .controller('blocked_contactsController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
-        $http.get('/blocked_contacts').success(function(data, status, headers, config){
-            $scope.records=data;
+        $http.post('/blocked_contacts', $scope.page_request).success(function(data, status, headers, config){
+             $scope.paged_result = data;
+            $scope.records=$scope.paged_result.content;
         }).error(function(data, status, headers, config){
             alert('Unable to load records');
         });
@@ -503,7 +537,40 @@ angular.module('myApp', [
         record.is_modify = true;
     }
 
-    $scope.fetchData();
+    $scope.page_request = {
+        'page_no': 1,
+        'size': 25,
+    }
+
+    $scope.page_size_options = [25, 50, 100]
+
+    $scope.paginationListener = function(newPageRequest, oldPageRequest){
+
+        if(newPageRequest.page_no > 0 ){
+            $scope.fetchData();
+        }
+    }
+
+    $scope.toPreviousPage = function(){
+        $scope.page_request.page_no = parseInt($scope.page_request.page_no);
+        var current_page_no = $scope.page_request.page_no;
+
+        if(current_page_no > 1){
+            $scope.page_request.page_no = $scope.page_request.page_no - 1;
+        }
+    }
+
+    $scope.toNextPage = function(){
+        $scope.page_request.page_no = parseInt($scope.page_request.page_no);
+        var current_page_no = $scope.page_request.page_no;
+
+        if( current_page_no < $scope.paged_result.total_pages){
+            $scope.page_request.page_no = $scope.page_request.page_no + 1;
+        }
+    }
+
+    //setup the watch function for the pagination
+    $scope.$watch('page_request', $scope.paginationListener, true)
 
  }])
  .controller('configsController', ['$scope','$http', function($scope, $http) {

@@ -115,7 +115,7 @@ def get_jobs():
 
     paged_result['total_count'] = JobItem.count()
 
-    paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] / size != 0 else \
+    paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
         paged_result['total_count'] / size
 
 
@@ -136,12 +136,27 @@ def extract_jobs_as_file(format='xlsx'):
     return response
 
 
-@app.route('/reject_rules', methods=['GET'])
+@app.route('/reject_rules', methods=['GET', 'POST'])
 @roles_required('admin')
 def get_reject_rules():
 
-    records = RejectionPattern.findall()
-    return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+    # Getting the pagination information
+    page_request = request.json
+    paged_result = {'page_request': page_request}
+
+    size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
+    page_no = int(page_request.get('page_no', 1)) if page_request else 1
+
+    paged_result['content'] = RejectionPattern.find_with_pagination({'page_no': page_no, 'size': size})
+
+    paged_result['total_count'] = RejectionPattern.count()
+
+    paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
+        paged_result['total_count'] / size
+
+
+    return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+
 
 @app.route('/reject_rules/save', methods=['POST'])
 @roles_required('admin')
@@ -179,10 +194,25 @@ def import_reject_rules_from_file():
     logger.info('Done importing %d rejection rules from %s' % (count, file.filename))
     return redirect(redirect_url)
 
-@app.route('/blocked_contacts', methods=['GET'])
+@app.route('/blocked_contacts', methods=['GET', 'POST'])
 def get_blocked_contacts():
-    records = BlockedContact.findall()
-    return json.dumps(records, default=lambda o: o.__dict__, sort_keys=True, indent=4)
+    # Getting the pagination information
+    page_request = request.json
+    paged_result = {'page_request': page_request}
+
+    size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
+    page_no = int(page_request.get('page_no', 1)) if page_request else 1
+
+    paged_result['content'] = BlockedContact.find_with_pagination({'page_no': page_no, 'size': size})
+
+    paged_result['total_count'] = BlockedContact.count()
+
+    paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
+        paged_result['total_count'] / size
+
+
+    return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+
 
 @app.route('/blocked_contacts/save', methods=['POST'])
 @roles_required('admin')
