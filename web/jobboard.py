@@ -10,8 +10,9 @@ except ImportError:
     import json
 import datetime
 
-from flask import Flask, redirect, url_for, make_response, request, _app_ctx_stack, g
+from flask import Flask, redirect, url_for, make_response, request, g
 from flask.templating import render_template
+from werkzeug.routing import BaseConverter
 
 import app as app_context
 from app.context import Scheduler, logger
@@ -23,14 +24,19 @@ from jobcrawler.models import JobItem, RejectionPattern, BlockedContact, User, C
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '1234567890'
 
-# with app.app_context():
-#     print current_app.__dict__
-#     print _app_ctx_stack.__dict__
+class RegexConverter(BaseConverter):
+    def __init__(self, map, *items):
+        super(RegexConverter, self).__init__(map)
+        self.regex = items[0]
+
+app.url_map.converters['regex'] = RegexConverter
+
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 
+### decorator for the @roles_required
 def roles_required(required_role):
     def wrapper(func):
 
@@ -102,195 +108,70 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/jobs', methods=['POST'])
-def get_jobs():
-    # Getting the pagination information
-    page_request = request.json
-    paged_result = {'page_request': page_request}
 
-    size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
-    page_no = int(page_request.get('page_no', 1)) if page_request else 1
-
-    paged_result['content'] = JobItem.find_with_pagination({'page_no': page_no, 'size': size})
-
-    paged_result['total_count'] = JobItem.count()
-
-    paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
-        paged_result['total_count'] / size
-
-
-    return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
-
-@app.route('/jobs/remove', methods=['POST'])
+@app.route('/configs', methods=['GET'])
 @roles_required('admin')
-def remove_jobs():
-    JobItem.from_dict(request.json).remove()
+def get_config():
+    return json.dumps([{'property': key, 'value': value} for (key, value) in Config.__dict__.items() if not key.startswith('__')],
+                      default=lambda o: o.__dict__, sort_keys=True, indent=4)
+
+@app.route('/<regex(r"jobs|blocked_contacts"):item_desc>', methods=['GET', 'POST'])
+def get_records(item_desc):
+    cls = desc_to_cls_mapping.get(item_desc)
+    return get_paged_result(request, cls)()
+
+
+@app.route('/<item_desc>', methods=['POST'])
+@roles_required('admin')
+def get_protected_records(item_desc):
+    cls = desc_to_cls_mapping.get(item_desc)
+    return get_paged_result(request, cls)()
+
+
+@app.route('/<item_desc>/save', methods=['POST'])
+@roles_required('admin')
+def save_records(item_desc):
+    cls = desc_to_cls_mapping.get(item_desc)
+    cls.from_dict(request.json).save()
     return "OK"
 
-@app.route('/jobs/extract/<format>', methods=['GET'])
-def extract_jobs_as_file(format='xlsx'):
-    response = make_response(JobItem.extract_records_as_bytes(format))
-    response.headers["Content-Disposition"] = "attachment; filename=extracted_jobs_%s.%s" % (
-        datetime.datetime.now().strftime('%Y-%m-%d'), format)
 
+@app.route('/<item_desc>/remove', methods=['POST'])
+@roles_required('admin')
+def remove_records(item_desc):
+    cls = desc_to_cls_mapping.get(item_desc)
+    cls.from_dict(request.json).remove()
+    return "OK"
+
+
+@app.route('/<item_desc>/extract/<format>', methods=['GET'])
+def extract_records_as_file(item_desc,format):
+    cls = desc_to_cls_mapping.get(item_desc)
+    response = make_response(cls.extract_records_as_bytes(format))
+    response.headers["Content-Disposition"] = "attachment; filename=extracted_%s_%s.%s" % (
+        item_desc, datetime.datetime.now().strftime('%Y-%m-%d'), format)
     return response
 
 
-@app.route('/reject_rules', methods=['POST'])
+@app.route('/<item_desc>/import', methods=['POST'])
 @roles_required('admin')
-def get_reject_rules():
-
-    # Getting the pagination information
-    page_request = request.json
-    paged_result = {'page_request': page_request}
-
-    size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
-    page_no = int(page_request.get('page_no', 1)) if page_request else 1
-
-    paged_result['content'] = RejectionPattern.find_with_pagination({'page_no': page_no, 'size': size})
-
-    paged_result['total_count'] = RejectionPattern.count()
-
-    paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
-        paged_result['total_count'] / size
-
-
-    return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
-
-
-@app.route('/reject_rules/save', methods=['POST'])
-@roles_required('admin')
-def save_reject_rules():
-    RejectionPattern.from_dict(request.json).save()
-    return "OK"
-
-@app.route('/reject_rules/remove', methods=['POST'])
-@roles_required('admin')
-def remove_reject_rules():
-    RejectionPattern.from_dict(request.json).remove
-    return "OK"
-
-@app.route('/reject_rules/extract/<format>', methods=['GET'])
-@roles_required('admin')
-def extract_reject_rules_as_file(format='csv'):
-    response = make_response(RejectionPattern.extract_records_as_bytes(format))
-    response.headers["Content-Disposition"] = "attachment; filename=reject_rules.%s" % format
-    return response
-
-@app.route('/reject_rules/import', methods=['POST'])
-@roles_required('admin')
-def import_reject_rules_from_file():
+def import_records_from_file(item_desc):
+    cls = desc_to_cls_mapping.get(item_desc)
     file = request.files['file_to_upload']
     redirect_url = request.form.get('redirect_url', url_for('index'))
-    for record in RejectionPattern.findall():
+    for record in cls.findall():
         record.remove()
-    logger.info('Done removing all existing rejection patterns')
-    count = 0
-    file.readline()  #for the header, ignore
-    for line in file.readlines():
-        columns = line.rstrip('\r\n').rstrip('\n').decode('utf-8').split(',')  # remove the end of line
-        RejectionPattern(columns[0], columns[1]).save()
-        count += 1
-    logger.info('Done importing %d rejection rules from %s' % (count, file.filename))
-    return redirect(redirect_url)
-
-@app.route('/blocked_contacts', methods=['GET', 'POST'])
-def get_blocked_contacts():
-
-    if request.method == 'POST':
-        # Getting the pagination information
-        page_request = request.json
-        paged_result = {'page_request': page_request}
-
-        size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
-        page_no = int(page_request.get('page_no', 1)) if page_request else 1
-
-        paged_result['content'] = BlockedContact.find_with_pagination({'page_no': page_no, 'size': size})
-
-        paged_result['total_count'] = BlockedContact.count()
-
-        paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
-            paged_result['total_count'] / size
-
-
-        return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
-
-    elif request.method == 'GET':
-        return json.dumps(BlockedContact.findall(), cls=CustomJsonEncoder, sort_keys=True, indent=4)
-
-
-@app.route('/blocked_contacts/save', methods=['POST'])
-@roles_required('admin')
-def save_blocked_contact():
-    BlockedContact.from_dict(request.json).save()
-    return "OK"
-
-
-@app.route('/blocked_contacts/remove', methods=['POST'])
-@roles_required('admin')
-def remove_blocked_contact():
-    try:
-        blocked_contact = BlockedContact.from_dict(request.json)
-        blocked_contact.remove()
-    except Exception as e:
-        logger.error(e)
-        response = make_response(e)
-        response.status = 'internal error'
-        response.status_code = 500
-        return response
-
-    return "OK"
-
-@app.route('/blocked_contacts/extract/<format>', methods=['GET'])
-@roles_required('admin')
-def extract_blocked_contacts_as_file(format='csv'):
-    response = make_response(BlockedContact.extract_records_as_bytes(format))
-    response.headers["Content-Disposition"] = "attachment; filename=blocked_contacts.%s" % format
-    return response
-
-@app.route('/blocked_contacts/import', methods=['POST'])
-@roles_required('admin')
-def import_blocked_contact_from_file():
-    file = request.files['file_to_upload']
-    redirect_url = request.form.get('redirect_url', url_for('index'))
-    for record in BlockedContact.findall():
-        record.remove()
-    logger.info('Done removing all existing blocked contacts')
+    logger.info('Done removing all existing %s' % item_desc)
 
     count = 0
     file.readline()  #for the header, ignore
     for line in file.readlines():
         columns = line.rstrip('\r\n').rstrip('\n').decode('utf-8').split(',')
-        BlockedContact(columns[0], columns[1]).save()
+        cls(columns[0], columns[1]).save()
         count += 1
-    logger.info('Done importing %d blocked contacts from %s' % (count, file.filename))
+    logger.info('Done importing %d %s from %s' % (count, item_desc, file.filename))
     return redirect(redirect_url)
 
-
-@app.route('/users', methods=['POST'])
-@roles_required('admin')
-def get_users():
-    # Getting the pagination information
-    page_request = request.json
-    paged_result = {'page_request': page_request}
-
-    size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
-    page_no = int(page_request.get('page_no', 1)) if page_request else 1
-
-    paged_result['content'] = User.find_with_pagination({'page_no': page_no, 'size': size})
-
-    paged_result['total_count'] = User.count()
-
-    paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
-        paged_result['total_count'] / size
-
-    return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
-
-@app.route('/users/save', methods=['POST'])
-@roles_required('admin')
-def save_users():
-    User.from_dict(request.json).save()
-    return "OK"
 
 @app.route('/users/register', methods=['POST'])
 def register_user():
@@ -308,55 +189,24 @@ def register_user():
 
     return redirect(url_for('index'))
 
-@app.route('/users/remove', methods=['POST'])
+
+@app.route('/admin/run/<job_name>', methods=['GET'])
 @roles_required('admin')
-def remove_user():
-    try:
-        User.from_dict(request.json).remove()
-    except Exception as e:
-        logger.error(e)
-        response = make_response(e)
-        response.status = 'internal error'
-        response.status_code = 500
-        return response
-
-    return "OK"
-
-@app.route('/configs', methods=['GET'])
-@roles_required('admin')
-def get_config():
-    return json.dumps([{'property': key, 'value': value} for (key, value) in Config.__dict__.items() if not key.startswith('__')],
-                      default=lambda o: o.__dict__, sort_keys=True, indent=4)
-
-
-@app.route('/admin/run_crawler', methods=['GET'])
-@roles_required('admin')
-def re_run_crawler():
-    Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_crawler)
+def re_run_job(job_name):
+    Scheduler.get_scheduler().add_job(func=getattr(AppRunner.get_instance(),'run_%s' % job_name))
     return redirect(url_for('index'))
 
-@app.route('/admin/run_housekeeper', methods=['GET'])
-@roles_required('admin')
-def re_run_housekeeper():
-    Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_housekeeper)
-    return redirect(url_for('index'))
-
-@app.route('/admin/run_emailer', methods=['GET'])
-@roles_required('admin')
-def re_run_emailer():
-    Scheduler.get_scheduler().add_job(func=AppRunner.get_instance().run_emailer)
-    return redirect(url_for('index'))
 
 @app.route('/menus', methods=['GET'])
 def get_menu():
     menu_items = {'menu_items': []}
     if g.user.is_authenticated() and g.user.get_role() == 'admin':
         menu_items['menu_items'].append(
-            {'label': 'Run Crawler', 'link': '/admin/run_crawler', 'menu_item_id': 'admin_run_crawler'})
+            {'label': 'Run Crawler', 'link': '/admin/run/crawler', 'menu_item_id': 'admin_run_crawler'})
         menu_items['menu_items'].append(
-            {'label': 'Run Emailer', 'link': '/admin/run_emailer', 'menu_item_id': 'admin_run_emailer'})
+            {'label': 'Run Emailer', 'link': '/admin/run/emailer', 'menu_item_id': 'admin_run_emailer'})
         menu_items['menu_items'].append(
-            {'label': 'Run Housekeeper', 'link': '/admin/run_housekeeper', 'menu_item_id': 'admin_run_housekeeper'})
+            {'label': 'Run Housekeeper', 'link': '/admin/run/housekeeper', 'menu_item_id': 'admin_run_housekeeper'})
         menu_items['menu_items'].append(
             {'label': 'Config Reject Rules', 'link': '/#/reject_rules', 'menu_item_id': 'admin_config_reject_rules'})
         menu_items['menu_items'].append(
@@ -370,3 +220,35 @@ def get_menu():
         {'label': 'Download As Excel', 'link': '/jobs/extract/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})
 
     return json.dumps(menu_items)
+
+##############################
+# Helper methods
+##############################
+
+desc_to_cls_mapping = {
+    'jobs' : JobItem,
+    'users': User,
+    'reject_rules': RejectionPattern,
+    'blocked_contacts': BlockedContact
+}
+
+def get_paged_result(request, cls):
+    def wrapper():
+        if request.method == 'POST':
+            # Getting the pagination information
+            page_request = request.json
+            paged_result = {'page_request': page_request}
+
+            size = int(page_request.get('size', 25)) if page_request else 25 # convert the string to int
+            page_no = int(page_request.get('page_no', 1)) if page_request else 1
+
+            paged_result['content'] = cls.find_with_pagination({'page_no': page_no, 'size': size})
+
+            paged_result['total_count'] = cls.count()
+
+            paged_result['total_pages'] = paged_result['total_count'] / size + 1 if paged_result['total_count'] % size != 0 else \
+                paged_result['total_count'] / size
+            return json.dumps(paged_result, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+        elif request.method == 'GET':
+            return json.dumps(cls.findall(), cls=CustomJsonEncoder, sort_keys=True, indent=4)
+    return wrapper
