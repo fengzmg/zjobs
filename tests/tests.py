@@ -368,7 +368,7 @@ class UserTest(BaseTestCase):
 
     def test_update(self):
         User('username', 'password', 'meng@db.com').save()
-        User('username', 'another', 'another@db.com').save()
+        User('username', 'another', 'another@db.com').update()
 
         user = User.find(User(username='username'))
         print user

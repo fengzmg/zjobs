@@ -110,8 +110,7 @@ class BaseObject(BaseItem):
                       tuple([getattr(criteria_obj, property) for property in cls.key_properties]))
             return cls.from_dict(dict(zip(cls.property_names, c.fetchone())))
         except Exception as e:
-            logger.error(e)
-            logger.info('returning None as exception occurs in User.find()')
+            logger.debug(e)
             return None
         finally:
             conn.close()
@@ -132,30 +131,50 @@ class BaseObject(BaseItem):
         finally:
             conn.close()
 
+    def update(self):
+        conn = self.connect_db()
+        try:
+            c = conn.cursor()
+            c.execute(' UPDATE ' + self.table_name +
+                      ' SET ' + ', '.join(['%s=?' % property for property in self.property_names]) +
+                      ' WHERE ' + ' AND '.join(['%s=?' % property for property in self.key_properties]),
+                      tuple([getattr(self, property) for property in self.property_names] + [getattr(self, property) for property in self.key_properties]))
+            conn.commit()
+            logger.info('Updated: %s' % self)
+        except Exception as e:
+            logger.error(e)
+            logger.info('Unable to update: %s' % self)
+            conn.rollback()
+            raise DatabaseError(str(e))
+        finally:
+            conn.close()
 
     def save(self):
         if self:
-            self.remove()
+            if self.find(self) is None:
 
-            conn = self.connect_db()
-            try:
-                c = conn.cursor()
+                conn = self.connect_db()
+                try:
+                    c = conn.cursor()
 
-                c.execute('INSERT INTO ' + self.table_name +
-                          '(' +
-                          ', '.join(self.property_names) +
-                          ') ' +
-                          'VALUES (' + ', '.join(['?'] * len(self.property_names)) + ')',
-                          tuple([getattr(self, property_name) for property_name in self.property_names])
-                          )
-                conn.commit()
-                logger.info('Saved item: %s' % self)
-            except Exception as e:
-                conn.rollback()
-                logger.error('Unable to save the item: %s' % self)
-                logger.error(e)
-            finally:
-                conn.close()
+                    c.execute('INSERT INTO ' + self.table_name +
+                              '(' +
+                              ', '.join(self.property_names) +
+                              ') ' +
+                              'VALUES (' + ', '.join(['?'] * len(self.property_names)) + ')',
+                              tuple([getattr(self, property_name) for property_name in self.property_names])
+                              )
+                    conn.commit()
+                    logger.info('Inserted item: %s' % self)
+                except Exception as e:
+                    conn.rollback()
+                    logger.error('Unable to insert the item: %s' % self)
+                    logger.error(e)
+                finally:
+                    conn.close()
+
+            else:
+                self.update()
 
     @classmethod
     def count(cls, criteria=None):
@@ -193,8 +212,9 @@ class BaseObject(BaseItem):
             else:
                 # TODO need to add the criteria handling
                 c.execute('SELECT * FROM ( \
-                        SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name + ' ORDER BY publish_date DESC \
-                    ) AS RESULT LIMIT ? OFFSET ?  ', (size, size * (page_no - 1)))
+                        SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name +
+                          ' ORDER BY ' + ', '.join(['%s %s' % (property, order) for (property, order) in cls.order_properties]) +
+                        ') AS RESULT LIMIT ? OFFSET ?  ', (size, size * (page_no - 1) ))
 
             return [cls.from_dict(dict(zip(cls.property_names, row))) for row in c.fetchall()]
         finally:
