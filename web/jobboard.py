@@ -94,7 +94,10 @@ def login():
     redirect_url = request.form.get('next', url_for('index'))
     if user_name != '' and user_password != '':
         if User.validate(User(user_name, user_password)):
-            login_user(User(user_name, user_password))
+            user = User.find(User(user_name))
+            user.last_login_date = datetime.datetime.now()
+            user.save()
+            login_user(user)
             return redirect(redirect_url)
         else:
             return redirect(url_for('index'))
