@@ -13,8 +13,7 @@ from apscheduler.triggers.cron import CronTrigger
 from app.context import logger, Datasource, Scheduler
 from app.context import Config as config
 from jobcrawler.models import JobItem, User
-import jobcrawler
-import app
+
 
 class CrawlerRunner:
     def _crawl(cls, spider_name=None):

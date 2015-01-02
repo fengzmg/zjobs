@@ -2,25 +2,13 @@ import logging
 from apscheduler.schedulers.background import BackgroundScheduler
 import pg8000 as dbi
 import os
+from os.path import dirname, realpath
 
-###################################################
-#   Logging Configuration  -- config.logger can be imported
-##################################################
-logger = logging.getLogger('zjobs.backend')
-logger.setLevel(logging.INFO)
-
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('[%(asctime)s] [%(process)d] [%(levelname)s] [%(name)s] %(message)s')
-ch.setFormatter(formatter)
-# add the handlers to the logger
-logger.addHandler(ch)
+app_home_dir = dirname(dirname(realpath(__file__)))
 
 class Config:
 
-    APP_NAME = 'Zjobs'
+    APP_NAME = 'zjobs'
     APP_HOME = '/apps/jobcrawler'
     DB_HOST = os.environ.get('DB_HOST', 'localhost')
     DATABASE = os.environ.get('DATABASE', 'zjobs')
@@ -41,6 +29,12 @@ class Config:
     EXPORT_TO_FILE_ENABLED = False
 
     APP_HEARTBEAT_URL = 'https://zjobs.herokuapp.com/'
+
+    LOG_FILE = app_home_dir + os.sep + 'zjobs.log'
+    LOG_FORMAT = '[%(asctime)s] [%(process)d] [%(levelname)s] [%(name)s] %(message)s'
+    LOG_ENCODING = 'utf-8'
+    LOG_LEVEL = logging.INFO
+    LOGGER_NAME = 'zjobs.backend'
 
 config = Config
 
@@ -69,3 +63,24 @@ class Scheduler:
             Scheduler.scheduler.start()
 
         return Scheduler.scheduler
+
+
+###################################################
+#   Logging Configuration  -- config.logger can be imported
+##################################################
+logger = logging.getLogger(config.LOGGER_NAME)
+logger.setLevel(config.LOG_LEVEL)
+
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(config.LOG_LEVEL)
+# create formatter and add it to the handlers
+formatter = logging.Formatter(config.LOG_FORMAT)
+ch.setFormatter(formatter)
+# create file handler
+fh = logging.FileHandler(config.LOG_FILE , encoding=config.LOG_ENCODING)
+fh.setLevel(config.LOG_LEVEL)
+fh.setFormatter(formatter)
+# add the handlers to the logger
+logger.addHandler(ch)
+logger.addHandler(fh)
