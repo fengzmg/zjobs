@@ -1,8 +1,16 @@
 <div>
-    <h4 class="text-center" style="margin-bottom:20px;">Application Logs</h4>
-    <table class="table table-striped table-hover" style="width:95%; margin:0 auto;">
+    <h4 class="text-center" style="margin-bottom:20px;">Core Application Logs</h4>
+
+    <div style="width:50%;margin:0 auto;margin-bottom:15px;">
+        <a class="btn btn-primary btn-sm" href="/admin/logs/purge">Purge All Logs</a>
+        <button class="btn btn-warning btn-sm" ng-click="retrieveAllLogs()" ng-disabled="isShowAllLogsDisabled">Show All Logs</button>
+        <button class="btn btn-success btn-sm" ng-click="trackLogs()" ng-disabled="isTrackLogsDisabled">Track Logs</button>
+        <span loading-indicator></span>
+    </div>
+
+    <table class="table table-striped table-hover" style="width:90%; margin:0 auto;">
         <tbody>
-       <tr ng-repeat="record in records">
+       <tr ng-repeat="record in records track by $index">
             <td>[[ record ]]</td>
         </tr>
         </tbody>

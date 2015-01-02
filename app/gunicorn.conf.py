@@ -11,9 +11,9 @@ import multiprocessing
 from app.context import Config
 #bind = '0.0.0.0:8000'
 loglevel = 'info'
-#errorlog = '-'   # to stderr
-errorlog = Config.LOG_FILE
-#accesslog = '-'   # to stederr
-accesslog = Config.LOG_FILE
+errorlog = '-'   # to stderr
+#errorlog = Config.LOG_FILE
+accesslog = '-'   # to stederr
+#accesslog = Config.LOG_FILE
 workers = multiprocessing.cpu_count() * 2 + 1
 timeout = 60

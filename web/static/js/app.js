@@ -587,9 +587,9 @@ angular.module('myApp', [
     $scope.fetchData();
 
  }])
- .controller('logsController', ['$scope','$http', function($scope, $http) {
+ .controller('logsController', ['$scope','$http', '$interval', function($scope, $http, $interval) {
     $scope.fetchData = function(){
-        $http.get('/admin/view/logs').success(function(data, status, headers, config){
+        $http.get('/admin/logs/view/1500').success(function(data, status, headers, config){
             $scope.records=data;
         }).error(function(data, status, headers, config){
             alert('Unable to load records');
@@ -597,6 +597,30 @@ angular.module('myApp', [
     }
 
     $scope.fetchData();
+
+    $scope.retrieveAllLogs = function(e){
+        $interval.cancel( $scope.log_refresh_repeater);
+        $scope.isShowAllLogsDisabled = true;
+        $scope.isTrackLogsDisabled = false;
+
+        $http.get('/admin/logs/view/all').success(function(data, status, headers, config){
+            $scope.records=data;
+        }).error(function(data, status, headers, config){
+            alert('Unable to load records');
+        });
+    }
+
+    $scope.trackLogs = function(e){
+
+        $scope.isShowAllLogsDisabled = false;
+        $scope.isTrackLogsDisabled = true;
+
+        $scope.log_refresh_repeater = $interval(function(){
+            $scope.fetchData();
+        }, 2000);
+    }
+
+    $scope.trackLogs();
 
  }])
  .controller('usersController', ['$scope','$http', function($scope, $http) {

@@ -193,12 +193,21 @@ def register_user():
     return redirect(url_for('index'))
 
 
-@app.route('/admin/view/logs', methods=['GET'])
+@app.route('/admin/logs/view/<lines>', methods=['GET'])
 @roles_required('admin')
-def show_logs():
-    output = os.popen('tail -n 1500 %s' % Config.LOG_FILE).readlines()[::-1]
+def show_logs(lines='1500'):
+    if lines != 'all':
+        output = os.popen('tail -n %d %s' % (int(lines), Config.LOG_FILE)).readlines()[::-1]
+    else:
+        output = os.popen('cat %s' % Config.LOG_FILE).readlines()[::-1]
     return json.dumps(output)
 
+@app.route('/admin/logs/purge', methods=['GET'])
+@roles_required('admin')
+def purge_logs(lines='1500'):
+    with open(Config.LOG_FILE, 'w') as f:
+        f.write('')
+    return redirect('/#/logs')
 
 @app.route('/admin/run/<job_name>', methods=['GET'])
 @roles_required('admin')
