@@ -110,21 +110,13 @@ def logout():
     logout_user()
     return redirect(url_for('index'))
 
-
-
-@app.route('/configs', methods=['GET'])
-@roles_required('admin')
-def get_config():
-    return json.dumps([{'property': key, 'value': value} for (key, value) in Config.__dict__.items() if not key.startswith('__')],
-                      default=lambda o: o.__dict__, sort_keys=True, indent=4)
-
 @app.route('/<regex(r"jobs|blocked_contacts"):item_desc>', methods=['GET', 'POST'])
 def get_records(item_desc):
     cls = desc_to_cls_mapping.get(item_desc)
     return get_paged_result(request, cls)()
 
 
-@app.route('/<item_desc>', methods=['POST'])
+@app.route('/<regex(r"users|reject_rules"):item_desc>', methods=['POST'])
 @roles_required('admin')
 def get_protected_records(item_desc):
     cls = desc_to_cls_mapping.get(item_desc)
@@ -175,6 +167,13 @@ def import_records_from_file(item_desc):
     logger.info('Done importing %d %s from %s' % (count, item_desc, file.filename))
     return redirect(redirect_url)
 
+
+
+@app.route('/configs', methods=['GET'])
+@roles_required('admin')
+def get_config():
+    return json.dumps(sorted([{'property': key, 'value': value} for (key, value) in Config.__dict__.iteritems() if not key.startswith('__')]),
+                      default=lambda o: o.__dict__, sort_keys=True, indent=4)
 
 @app.route('/users/register', methods=['POST'])
 def register_user():
