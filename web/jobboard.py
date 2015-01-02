@@ -196,15 +196,16 @@ def register_user():
 @app.route('/admin/logs/view/<lines>', methods=['GET'])
 @roles_required('admin')
 def show_logs(lines='1500'):
-    if lines != 'all':
-        output = os.popen('tail -n %d %s' % (int(lines), Config.LOG_FILE)).readlines()[::-1]
-    else:
-        output = os.popen('cat %s' % Config.LOG_FILE).readlines()[::-1]
+    if lines == 'all':
+        lines = '10000'  # max to load 10000 records
+
+    output = os.popen('tail -n %d %s' % (int(lines), Config.LOG_FILE)).readlines()[::-1]
+
     return json.dumps(output)
 
 @app.route('/admin/logs/purge', methods=['GET'])
 @roles_required('admin')
-def purge_logs(lines='1500'):
+def purge_logs():
     with open(Config.LOG_FILE, 'w') as f:
         f.write('')
     return redirect('/#/logs')
@@ -236,6 +237,8 @@ def get_menu():
             {'label': 'Manage Users', 'link': '/#/users', 'menu_item_id': 'admin_config_users'})
         menu_items['menu_items'].append(
             {'label': 'View Logs', 'link': '/#/logs', 'menu_item_id': 'admin_view_logs'})
+        menu_items['menu_items'].append(
+            {'label': 'View App Dashboard', 'link': 'https://dashboard.heroku.com/apps/zjobs/resources', 'menu_item_id': 'admin_view_app_dashboard'})
 
     menu_items['menu_items'].append(
         {'label': 'Download As Excel', 'link': '/jobs/extract/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})

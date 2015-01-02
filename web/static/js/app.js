@@ -114,7 +114,8 @@ angular.module('myApp', [
                 'admin_config_blocked_contacts': 'glyphicon glyphicon-wrench',
                 'admin_config_app_settings': 'glyphicon glyphicon-asterisk',
                 'admin_config_users': 'glyphicon glyphicon-user',
-                'admin_view_logs': 'glyphicon glyphicon-zoom-in',
+                'admin_view_logs': 'glyphicon glyphicon-eye-open',
+                'admin_view_app_dashboard': 'glyphicon glyphicon-dashboard',
                 'extract_jobs_xlsx':'glyphicon glyphicon-floppy-disk'
             }
 
@@ -617,7 +618,7 @@ angular.module('myApp', [
 
         $scope.log_refresh_repeater = $interval(function(){
             $scope.fetchData();
-        }, 2000);
+        }, 5000);
     }
 
     $scope.trackLogs();
