@@ -11,6 +11,7 @@ angular.module('myApp', [
     $routeProvider.when('/blocked_contacts', {templateUrl: '/protected/html/blocked_contacts', controller: 'blocked_contactsController'});
     $routeProvider.when('/configs', {templateUrl: '/protected/html/configs', controller: 'configsController'});
     $routeProvider.when('/users', {templateUrl: '/protected/html/users', controller: 'usersController'});
+    $routeProvider.when('/logs', {templateUrl: '/protected/html/logs', controller: 'logsController'});
     $routeProvider.otherwise({redirectTo: '/jobs'});
 }])
 .config(function($interpolateProvider) {
@@ -113,6 +114,7 @@ angular.module('myApp', [
                 'admin_config_blocked_contacts': 'glyphicon glyphicon-wrench',
                 'admin_config_app_settings': 'glyphicon glyphicon-asterisk',
                 'admin_config_users': 'glyphicon glyphicon-user',
+                'admin_view_logs': 'glyphicon glyphicon-zoom-in',
                 'extract_jobs_xlsx':'glyphicon glyphicon-floppy-disk'
             }
 
@@ -576,6 +578,18 @@ angular.module('myApp', [
  .controller('configsController', ['$scope','$http', function($scope, $http) {
     $scope.fetchData = function(){
         $http.get('/configs').success(function(data, status, headers, config){
+            $scope.records=data;
+        }).error(function(data, status, headers, config){
+            alert('Unable to load records');
+        });
+    }
+
+    $scope.fetchData();
+
+ }])
+ .controller('logsController', ['$scope','$http', function($scope, $http) {
+    $scope.fetchData = function(){
+        $http.get('/admin/view/logs').success(function(data, status, headers, config){
             $scope.records=data;
         }).error(function(data, status, headers, config){
             alert('Unable to load records');

@@ -9,6 +9,7 @@
 #
 from scrapy import log
 from scrapy import logformatter
+from app.context import Config
 
 
 class PoliteLogFormatter(logformatter.LogFormatter):
@@ -43,12 +44,12 @@ ITEM_PIPELINES = {
 }
 
 LOG_LEVEL = 'INFO'
-
+LOG_FORMATTER = 'jobcrawler.settings.PoliteLogFormatter'
+LOG_FILE = Config.LOG_FILE
 CONCURRENT_REQUESTS = 200
 COOKIES_ENABLED = False
 DOWNLOAD_DELAY = 0
 RETRY_ENABLED = False
 DOWNLOAD_TIMEOUT = 30
 
-LOG_FORMATTER = 'jobcrawler.settings.PoliteLogFormatter'
 

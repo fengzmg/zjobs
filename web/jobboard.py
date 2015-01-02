@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from functools import wraps
+import os
 from flask.globals import current_app
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import jobcrawler
@@ -192,6 +193,13 @@ def register_user():
     return redirect(url_for('index'))
 
 
+@app.route('/admin/view/logs', methods=['GET'])
+@roles_required('admin')
+def show_logs():
+    output = os.popen('tail -n 1500 %s' % Config.LOG_FILE).readlines()[::-1]
+    return json.dumps(output)
+
+
 @app.route('/admin/run/<job_name>', methods=['GET'])
 @roles_required('admin')
 def re_run_job(job_name):
@@ -217,6 +225,8 @@ def get_menu():
             {'label': 'Config App Setting', 'link': '/#/configs', 'menu_item_id': 'admin_config_app_settings'})
         menu_items['menu_items'].append(
             {'label': 'Manage Users', 'link': '/#/users', 'menu_item_id': 'admin_config_users'})
+        menu_items['menu_items'].append(
+            {'label': 'View Logs', 'link': '/#/logs', 'menu_item_id': 'admin_view_logs'})
 
     menu_items['menu_items'].append(
         {'label': 'Download As Excel', 'link': '/jobs/extract/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})
