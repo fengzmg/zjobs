@@ -3,7 +3,7 @@ from scrapy.contrib.spiders.crawl import CrawlSpider
 from scrapy.http.request import Request
 from jobcrawler.models import JobItem, BlockedContact, RejectionPattern
 from app.context import Config as config
-from scrapy import log
+from app.context import logger
 
 
 class BaseSpider(CrawlSpider):
@@ -44,18 +44,18 @@ class BaseSpider(CrawlSpider):
 
     def should_load_details(self, job_item):
         if JobItem.is_exists(job_item):
-            log.msg('[%s] skipping loading details as job already exists. job_title: %s' % (self.name, job_item.job_title))
+            logger.info('[%s] skipping loading details as job already exists. job_title: %s' % (self.name, job_item.job_title))
             return False
         if JobItem.is_older_required(job_item):
-            log.msg('[%s] skipping loading details as job is older than %s days. job_title: %s' % (self.name, str(config.HOUSEKEEPING_RECORD_ORDLER_THAN), job_item.job_title))
+            logger.info('[%s] skipping loading details as job is older than %s days. job_title: %s' % (self.name, str(config.HOUSEKEEPING_RECORD_ORDLER_THAN), job_item.job_title))
             return False
 
         if BlockedContact.is_contact_blocked(job_item.contact):
-            log.msg('[%s] skipping loading details as job contact is blocked. contact: %s' % (self.name, job_item.contact))
+            logger.info('[%s] skipping loading details as job contact is blocked. contact: %s' % (self.name, job_item.contact))
             return False
 
         if RejectionPattern.should_be_rejected(job_item.job_title):
-            log.msg('[%s] skipping loading details as job matches rejection pattern. job_title: %s' % (self.name, job_item.job_title))
+            logger.info('[%s] skipping loading details as job matches rejection pattern. job_title: %s' % (self.name, job_item.job_title))
             return False
 
         return True

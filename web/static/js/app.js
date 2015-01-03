@@ -618,7 +618,6 @@ angular.module('myApp', [
 
         $scope.log_refresh_repeater = $interval(function(){
             $http.get('/admin/logs/view/track').success(function(data, status, headers, config){
-                //angular.extend(data, $scope.records);
                 $scope.records=data.concat($scope.records);
             }).error(function(data, status, headers, config){
                 alert('Unable to load records');

@@ -200,7 +200,9 @@ def show_logs(lines='1500'):
         lines = '10000'  # max to load 10000 records
         output = os.popen('tail -n %d %s' % (int(lines), Config.LOG_FILE)).readlines()[::-1]
     elif lines == 'track':
-        output = os.popen('awk -v Time="`date -d\'now-5 seconds\' \'+%Y-%m-%d %H:%M:%S\'`" \'{if($0 > Time) print $0}\' ' +  Config.LOG_FILE).readlines()[::-1]
+        cmd = 'awk -v Time="`date -d\'now-5 seconds\' \'+[%Y-%m-%d %H:%M:%S\'`" \'{if($0 > Time) print $0}\' ' +  Config.LOG_FILE
+        #print cmd
+        output = os.popen(cmd).readlines()[::-1]
     elif lines.isnumeric():
         output = os.popen('tail -n %d %s' % (int(lines), Config.LOG_FILE)).readlines()[::-1]
     return json.dumps(output)
