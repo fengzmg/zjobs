@@ -214,6 +214,15 @@ def purge_logs():
         f.write('')
     return redirect('/#/logs')
 
+
+@app.route('/admin/run', methods=['POST'])
+@roles_required('admin')
+def run_console_cmd():
+    console_cmd = request.json.get('command')
+    output_lines = os.popen(console_cmd).read()
+    return output_lines
+
+
 @app.route('/admin/run/<job_name>', methods=['GET'])
 @roles_required('admin')
 def re_run_job(job_name):
@@ -241,6 +250,8 @@ def get_menu():
             {'label': 'Manage Users', 'link': '/#/users', 'menu_item_id': 'admin_config_users'})
         menu_items['menu_items'].append(
             {'label': 'View Logs', 'link': '/#/logs', 'menu_item_id': 'admin_view_logs'})
+        menu_items['menu_items'].append(
+            {'label': 'Command Console', 'link': '/#/console', 'menu_item_id': 'admin_console'})
         menu_items['menu_items'].append(
             {'label': 'View App Dashboard', 'link': 'https://dashboard.heroku.com/apps/zjobs/resources', 'menu_item_id': 'admin_view_app_dashboard'})
 

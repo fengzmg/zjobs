@@ -12,6 +12,7 @@ angular.module('myApp', [
     $routeProvider.when('/configs', {templateUrl: '/protected/html/configs', controller: 'configsController'});
     $routeProvider.when('/users', {templateUrl: '/protected/html/users', controller: 'usersController'});
     $routeProvider.when('/logs', {templateUrl: '/protected/html/logs', controller: 'logsController'});
+    $routeProvider.when('/console', {templateUrl: '/protected/html/console', controller: 'consoleController'});
     $routeProvider.otherwise({redirectTo: '/jobs'});
 }])
 .config(function($interpolateProvider) {
@@ -115,6 +116,7 @@ angular.module('myApp', [
                 'admin_config_app_settings': 'glyphicon glyphicon-asterisk',
                 'admin_config_users': 'glyphicon glyphicon-user',
                 'admin_view_logs': 'glyphicon glyphicon-eye-open',
+                'admin_console': 'glyphicon glyphicon-sound-stereo',
                 'admin_view_app_dashboard': 'glyphicon glyphicon-dashboard',
                 'extract_jobs_xlsx':'glyphicon glyphicon-floppy-disk'
             }
@@ -586,6 +588,46 @@ angular.module('myApp', [
     }
 
     $scope.fetchData();
+
+ }])
+ .controller('consoleController', ['$scope','$http', function($scope, $http) {
+    $scope.executeCmd = function(cmd){
+        var result;
+        jQuery.ajax({
+            url: '/admin/run',
+            type: 'POST',
+            data: JSON.stringify({'command': cmd}, null, '\t'),
+            contentType: 'application/json;charset=UTF-8',
+            async: false,
+            success: function(data){
+                result = data;
+            },
+            error: function(data){
+                result = 'Unable to process cmd..' + data;
+            }
+        });
+
+        return result;
+    }
+
+    jQuery('#terminal').terminal(function(command, term) {
+        if (command !== '') {
+            try {
+                var result = $scope.executeCmd(command);
+                if (result !== undefined) {
+                    term.echo(new String(result));
+                }
+            } catch(e) {
+                term.error(new String(e));
+            }
+        } else {
+           term.echo('');
+        }
+    }, {
+        greetings: 'Application Admin Console',
+        name: 'zjobs admin console',
+        height: 600,
+        prompt: 'zjobs admin> '});
 
  }])
  .controller('logsController', ['$scope','$http', '$interval', function($scope, $http, $interval) {

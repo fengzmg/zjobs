@@ -69,3 +69,11 @@ a:hover{
 	height: 30px;
 	width: 80px;
 }
+
+.terminal, .cmd {
+	font-family: FreeMono, monospace;
+	color: #32F925;
+	background-color: #000;
+	font-size: 14px;
+	line-height: 16px;
+}
