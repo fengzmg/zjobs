@@ -18,7 +18,7 @@ from jobcrawler.models import JobItem, User
 class CrawlerRunner:
     def _crawl(cls, spider_name=None):
         if spider_name:
-            os.system('cd %s && scrapy crawl %s' % (app_home_dir, spider_name))
+            os.popen('cd %s && scrapy crawl %s' % (app_home_dir, spider_name))
             logger.info('Done running spider %s' % spider_name)
         return None
 
@@ -156,11 +156,12 @@ class AppRunner(object):
         start_time = time.time()
         logger.info('start running crawler..')
 
-        # os.system('python '+ app_home_dir +'/app/run_crawler.py')
         spider_names = ['sgxin', 'shichengbbs', 'singxin', 'sggongzuo']
 
-        pool = Pool(processes=len(spider_names))
-        pool.map(CrawlerRunner(), spider_names)
+        # pool = Pool(processes=len(spider_names))
+        # pool.map(CrawlerRunner(), spider_names)
+        for spider_name in spider_names:
+            CrawlerRunner().__call__(spider_name)
 
         logger.info('done running crawler.. Time elapsed: %.3fs' % (time.time() - start_time))
 
