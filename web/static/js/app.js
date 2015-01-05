@@ -13,6 +13,7 @@ angular.module('myApp', [
     $routeProvider.when('/users', {templateUrl: '/protected/html/users', controller: 'usersController'});
     $routeProvider.when('/logs', {templateUrl: '/protected/html/logs', controller: 'logsController'});
     $routeProvider.when('/console', {templateUrl: '/protected/html/console', controller: 'consoleController'});
+    $routeProvider.when('/docs', {templateUrl: '/protected/html/documents', controller: 'docsController'});
     $routeProvider.otherwise({redirectTo: '/jobs'});
 }])
 .config(function($interpolateProvider) {
@@ -118,6 +119,7 @@ angular.module('myApp', [
                 'admin_view_logs': 'glyphicon glyphicon-eye-open',
                 'admin_console': 'glyphicon glyphicon-sound-stereo',
                 'admin_view_app_dashboard': 'glyphicon glyphicon-dashboard',
+                'admin_view_doc_repo': 'glyphicon glyphicon-dashboard',
                 'extract_jobs_xlsx':'glyphicon glyphicon-floppy-disk'
             }
 
@@ -540,6 +542,61 @@ angular.module('myApp', [
     $scope.modify = function(index){
         var record = $scope.records[index];
         record.is_modify = true;
+    }
+
+    $scope.page_request = {
+        'page_no': 1,
+        'size': 25,
+    }
+
+    $scope.page_size_options = [25, 50, 100]
+
+    $scope.paginationListener = function(newPageRequest, oldPageRequest){
+
+        if(newPageRequest.page_no > 0 ){
+            $scope.fetchData();
+        }
+    }
+
+    $scope.toPreviousPage = function(){
+        $scope.page_request.page_no = parseInt($scope.page_request.page_no);
+        var current_page_no = $scope.page_request.page_no;
+
+        if(current_page_no > 1){
+            $scope.page_request.page_no = $scope.page_request.page_no - 1;
+        }
+    }
+
+    $scope.toNextPage = function(){
+        $scope.page_request.page_no = parseInt($scope.page_request.page_no);
+        var current_page_no = $scope.page_request.page_no;
+
+        if( current_page_no < $scope.paged_result.total_pages){
+            $scope.page_request.page_no = $scope.page_request.page_no + 1;
+        }
+    }
+
+    //setup the watch function for the pagination
+    $scope.$watch('page_request', $scope.paginationListener, true)
+
+ }])
+  .controller('docsController', ['$scope','$http', function($scope, $http) {
+    $scope.fetchData = function(){
+        $http.post('/docs', $scope.page_request).success(function(data, status, headers, config){
+            $scope.paged_result = data;
+            $scope.records=$scope.paged_result.content;
+        }).error(function(data, status, headers, config){
+            alert('Unable to load records');
+        });
+    }
+
+    $scope.remove = function(index){
+        var record = $scope.records[index];
+        $http.post('/docs/remove', record).success(function(data, status, headers, config){
+            $scope.records.splice(index, 1);
+        }).error(function(data, status, headers, config){
+            alert('Cannot remove record');
+        });
     }
 
     $scope.page_request = {

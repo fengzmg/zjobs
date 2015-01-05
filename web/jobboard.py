@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from functools import wraps
+import mimetypes
 import os
 from flask.globals import current_app
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+import pg8000
 import jobcrawler
 
 try:
@@ -19,7 +21,7 @@ import app as app_context
 from app.context import Scheduler, logger
 from app.context import Config
 from app.run import AppRunner
-from jobcrawler.models import JobItem, RejectionPattern, BlockedContact, User, CustomJsonEncoder
+from jobcrawler.models import JobItem, RejectionPattern, BlockedContact, User, CustomJsonEncoder, Document
 
 
 app = Flask(__name__)
@@ -117,7 +119,7 @@ def get_records(item_desc):
     return get_paged_result(request, cls)()
 
 
-@app.route('/<regex(r"users|reject_rules"):item_desc>', methods=['POST'])
+@app.route('/<regex(r"users|reject_rules|docs"):item_desc>', methods=['POST'])
 @roles_required('admin')
 def get_protected_records(item_desc):
     cls = desc_to_cls_mapping.get(item_desc)
@@ -168,7 +170,22 @@ def import_records_from_file(item_desc):
     logger.info('Done importing %d %s from %s' % (count, item_desc, file.filename))
     return redirect(redirect_url)
 
+@app.route('/docs/save', methods=['POST'])
+@roles_required('admin')
+def save_uploaded_docs():
+    file = request.files['file_to_upload']
+    redirect_url = request.form.get('redirect_url', url_for('index'))
+    Document(file.filename, mimetypes.guess_type(file.filename, strict=False)[0], pg8000.BINARY(file.read()), g.user.username, datetime.datetime.now()).save()
+    return redirect(redirect_url)
 
+
+@app.route('/docs/download/<filename>', methods=['GET'])
+@roles_required('admin')
+def download_docs(filename):
+    doc = Document.find(Document(filename=filename))
+    response = make_response(doc.content)
+    response.headers["Content-Disposition"] = "attachment; filename=%s" % filename
+    return response
 
 @app.route('/configs', methods=['GET'])
 @roles_required('admin')
@@ -254,6 +271,8 @@ def get_menu():
             {'label': 'Command Console', 'link': '/#/console', 'menu_item_id': 'admin_console'})
         menu_items['menu_items'].append(
             {'label': 'View App Dashboard', 'link': 'https://dashboard.heroku.com/apps/zjobs/resources', 'menu_item_id': 'admin_view_app_dashboard'})
+        menu_items['menu_items'].append(
+            {'label': 'Doc Repo', 'link': '/#/docs', 'menu_item_id': 'admin_view_doc_repo'})
 
     menu_items['menu_items'].append(
         {'label': 'Download As Excel', 'link': '/jobs/extract/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})
@@ -265,10 +284,11 @@ def get_menu():
 ##############################
 
 desc_to_cls_mapping = {
-    'jobs' : JobItem,
+    'jobs': JobItem,
     'users': User,
     'reject_rules': RejectionPattern,
-    'blocked_contacts': BlockedContact
+    'blocked_contacts': BlockedContact,
+    'docs': Document
 }
 
 def get_paged_result(request, cls):

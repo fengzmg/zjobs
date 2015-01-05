@@ -121,6 +121,25 @@ class AppRunner(object):
 
             logger.info("created table and indexes for USERS")
 
+            c.execute('DROP TABLE IF EXISTS DOCS')
+            c.execute('DROP INDEX IF EXISTS docs_idx')
+
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS DOCS(
+                    filename              text,
+                    content_type          text,
+                    content               bytea,
+                    uploaded_by           text,
+                    uploaded_date         date
+                )
+                ''')
+
+            c.execute('''
+                CREATE UNIQUE INDEX docs_idx ON DOCS(filename)
+            ''')
+
+            logger.info("created table and indexes for DOCS")
+
             conn.commit()
             logger.info('done create database')
         except Exception as e:

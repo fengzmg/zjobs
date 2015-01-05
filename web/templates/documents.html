@@ -1,0 +1,48 @@
+<div>
+    <h4 class="text-center" style="margin-bottom:20px;">Document Repository</h4>
+
+    <div style="width:50%;margin:0 auto;margin-bottom:15px;">
+        <a class="btn btn-success btn-sm" file-upload="/docs/save" file-upload-redirect-url="/#/docs">Upload</a>
+    </div>
+
+    <table class="table table-bordered table-striped table-hover" style="width:50%; margin:0 auto;">
+        <thead>
+        <tr>
+            <th>Filename</th><th>File Type</th><th>Uploaded By</th><th>Upload Date</th><th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-repeat="record in records">
+            <td><a ng-href="/docs/download/[[record.filename]]">[[ record.filename ]]</a></td>
+            <td>[[ record.content_type ]]</td>
+            <td>[[ record.uploaded_by ]]</td>
+            <td>[[ record.uploaded_date ]]</td>
+            <td>
+                <span class="glyphicon glyphicon-trash inline_icon_btn" ng-click="remove($index)"></span>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="text-center">
+
+        <ul class="pagination">
+
+             <span ng-click="toPreviousPage()" class="glyphicon glyphicon-backward inline_icon_btn">
+             </span>
+
+              <span>
+                <input id="page_no_box" class="form-control" ng-model="page_request.page_no">&nbsp; of &nbsp; [[ paged_result.total_pages]]
+            </span>
+
+             <span ng-click="toNextPage()" class="glyphicon glyphicon-forward inline_icon_btn"></span>
+
+            <span>
+                Page Size
+                <select class="form-control" id="page_size_box" ng-model="page_request.size" ng-options="page_size for page_size in page_size_options">
+                </select>
+            </span>
+            <div loading-indicator></div>
+        </ul>
+    </div>
+</div>

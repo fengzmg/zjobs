@@ -6,6 +6,7 @@
 # http://doc.scrapy.org/en/latest/topics/items.html
 import datetime
 import re
+import pg8000
 
 try:
     import simplejson as json
@@ -231,15 +232,24 @@ class DatabaseError(Exception):
     def __str__(self):
         return repr(self.message)
 
+class Document(BaseObject):
+    property_names = ['filename', 'content_type', 'content', 'uploaded_by', 'uploaded_date']
+    key_properties = ['filename']
+    order_properties = [('uploaded_date', 'ASC')]
+    table_name = "DOCS"
+
+    def __init__(self, filename=None, content_type=None, content=None, uploaded_by=None, uploaded_date=None):
+        self.filename = filename
+        self.content_type = content_type
+        self.content = content
+        self.uploaded_by = uploaded_by
+        self.uploaded_date = uploaded_date
+
+    def __repr__(self):
+        return "{ filename: %s}" % self.filename
+
 
 class User(BaseObject):
-    username = None
-    password = None
-    email = None
-    subscription_status =None
-    role = None
-    last_login_date = None
-    register_date = None
 
     property_names = ['username', 'password', 'email', 'subscription_status', 'role', 'last_login_date', 'register_date']
     key_properties = ['username']
@@ -253,6 +263,7 @@ class User(BaseObject):
         self.role = role
         self.register_date = datetime.datetime.now()
         self.subscription_status = subscription_status
+        self.last_login_date = None
 
     def is_authenticated(self):
         return True
@@ -292,17 +303,6 @@ class User(BaseObject):
 
 
 class JobItem(BaseObject):
-    job_title = None
-    job_desc = None
-    job_details_link = None
-    job_location = None
-    job_country = None
-    salary = None
-    employer_name = None
-    publish_date = None  # datetime
-    crawled_date = None
-    contact = None
-    source = None
 
     property_names = ['job_title', 'job_desc', 'job_details_link', 'job_location', 'job_country',
                       'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
@@ -311,6 +311,19 @@ class JobItem(BaseObject):
     order_properties = [('publish_date', 'DESC')]
 
     table_name = 'CRAWLED_JOBS'
+
+    def __init__(self):
+        self.job_title = None
+        self.job_desc = None
+        self.job_details_link = None
+        self.job_location = None
+        self.job_country = None
+        self.salary = None
+        self.employer_name = None
+        self.publish_date = None  # datetime
+        self.crawled_date = None
+        self.contact = None
+        self.source = None
 
     @classmethod
     def is_exists(cls, item=None):
@@ -405,9 +418,6 @@ class RejectionPattern(BaseObject):
     order_properties = [('reject_pattern', 'ASC')]
     table_name = 'JOB_REJECTION_RULES'
 
-    reject_pattern = None
-    reject_reason = None
-
     def __init__(self, reject_pattern=None, reject_reason=None):
         self.reject_pattern = reject_pattern
         self.reject_reason = reject_reason
@@ -440,9 +450,6 @@ class BlockedContact(BaseObject):
     order_properties = [('contact', 'ASC')]
     table_name = 'BLOCKED_CONTACTS'
 
-    contact = None
-    block_reason = None
-
     def __init__(self, contact=None, block_reason=None):
         self.contact = contact
         self.block_reason = block_reason
@@ -469,10 +476,9 @@ class CustomJsonEncoder(json.JSONEncoder):
 
     def default(self, obj):
         if isinstance(obj, BaseObject):
-            return obj.__dict__
+            return {key: value for key, value in obj.__dict__.iteritems() if key != 'content'}
         if hasattr(obj, 'isoformat'):
             return obj.isoformat()
-
         return obj
 
 
