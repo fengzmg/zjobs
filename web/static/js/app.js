@@ -119,7 +119,7 @@ angular.module('myApp', [
                 'admin_view_logs': 'glyphicon glyphicon-eye-open',
                 'admin_console': 'glyphicon glyphicon-sound-stereo',
                 'admin_view_app_dashboard': 'glyphicon glyphicon-dashboard',
-                'admin_view_doc_repo': 'glyphicon glyphicon-dashboard',
+                'admin_view_doc_repo': 'glyphicon glyphicon-briefcase',
                 'extract_jobs_xlsx':'glyphicon glyphicon-floppy-disk'
             }
 

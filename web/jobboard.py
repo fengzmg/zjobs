@@ -272,7 +272,7 @@ def get_menu():
         menu_items['menu_items'].append(
             {'label': 'View App Dashboard', 'link': 'https://dashboard.heroku.com/apps/zjobs/resources', 'menu_item_id': 'admin_view_app_dashboard'})
         menu_items['menu_items'].append(
-            {'label': 'Doc Repo', 'link': '/#/docs', 'menu_item_id': 'admin_view_doc_repo'})
+            {'label': 'Document Repository', 'link': '/#/docs', 'menu_item_id': 'admin_view_doc_repo'})
 
     menu_items['menu_items'].append(
         {'label': 'Download As Excel', 'link': '/jobs/extract/xlsx', 'menu_item_id': 'extract_jobs_xlsx'})
