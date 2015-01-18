@@ -38,3 +38,26 @@ Installing the app as command line tool
    -----------------
     
     http://0.0.0.0:<PORT_SHOWN_IN_CONSOLE, 5000>
+
+
+Reference: Setup POSTGRES and databases
+====================================
+
+  Install Postgresql Database
+
+      sudo apt-get install postgresql
+
+  Switch User
+
+      sudo su postgres
+
+  Enter the command line:
+
+       psql
+
+  Setup the database and its users
+
+       postgres=# CREATE USER zjobs WITH PASSWORD 'zjobs';
+       postgres=# CREATE DATABASE zjobs;
+       postgres=# GRANT ALL PRIVILEGES ON DATABASE zjobs TO zjobs;
+
