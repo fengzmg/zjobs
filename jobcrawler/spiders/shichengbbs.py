@@ -31,7 +31,7 @@ class ShichengBBSSpider(BaseSpider):
             job_crawler_item.publish_date = \
             detail_item.re(r'(.*)<span.*</span> <i class="icon-phone-sign icon-small"></i>')[0].replace('\t', '')
             # Convert to the datetime format
-            job_crawler_item.publish_date = datetime.datetime.strptime(datetime.datetime.now().strftime('%Y') + '-' + job_crawler_item.publish_date, '%Y-%m-%d') if job_crawler_item.publish_date is not None else None
+            job_crawler_item.publish_date = self.derieve_date_from_short_date_string(job_crawler_item.publish_date) if job_crawler_item.publish_date is not None else None
             job_crawler_item.job_country = 'Singapore'
             job_crawler_item.job_location = 'Singapore'
             job_crawler_item.contact = detail_item.xpath('./div[2]/a/text()').extract()[0]

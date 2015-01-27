@@ -4,7 +4,6 @@ from os.path import dirname, realpath
 import random
 import sys
 import os
-import datetime
 
 app_home_dir = dirname(dirname(realpath(__file__)))
 sys.path.append(app_home_dir)
@@ -12,6 +11,7 @@ sys.path.append(app_home_dir)
 import unittest
 from app.run import AppRunner
 from jobcrawler.models import JobItem, BlockedContact, RejectionPattern, User
+from jobcrawler.spiders.base import BaseSpider
 import sqlite3 as dbi
 
 
@@ -399,6 +399,10 @@ class UserTest(BaseTestCase):
         print 'items', records
         self.assertEqual(10, len(records))
 
+class BaseSpiderTest(unittest.TestCase):
+    def test_derieve_date_from_short_date_string(self):
+        print BaseSpider().derieve_date_from_short_date_string("12-29").isoformat()
+        print BaseSpider().derieve_date_from_short_date_string("01-13").isoformat()
 
 def run_all_tests():
     unittest.main(verbosity=3)

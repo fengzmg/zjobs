@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 from scrapy.contrib.spiders.crawl import CrawlSpider
 from scrapy.http.request import Request
 from jobcrawler.models import JobItem, BlockedContact, RejectionPattern
@@ -61,6 +62,10 @@ class BaseSpider(CrawlSpider):
         return True
 
 
-
+    def derieve_date_from_short_date_string(self, date_string):
+        year = datetime.datetime.today().year
+        if datetime.datetime.strptime( '%d-%s' % ( year, date_string), "%Y-%m-%d" ) > datetime.datetime.now():
+            year = datetime.datetime.today().year - 1
+        return datetime.datetime.strptime( '%d-%s' % ( year, date_string), "%Y-%m-%d" )
 
 

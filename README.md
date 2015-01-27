@@ -61,3 +61,12 @@ Reference: Setup POSTGRES and databases
        postgres=# CREATE DATABASE zjobs;
        postgres=# GRANT ALL PRIVILEGES ON DATABASE zjobs TO zjobs;
 
+Setuping Ubuntu development dependencies
+==========================================
+
+The following development dependencies needs to be installed in order for lxml and twisted to work
+
+     sudo apt-get install python-dev
+     sudo apt-get install libffi-dev
+     sudo apt-get install libssl-dev
+
