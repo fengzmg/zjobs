@@ -25,7 +25,7 @@ class Config:
     WEB_HTTP_PORT = int(os.environ.get('PORT', 33507))
     WEB_DEBUG_ENABLED = True
 
-    HOUSEKEEPING_RECORD_ORDLER_THAN = 3
+    HOUSEKEEPING_RECORD_ORDLER_THAN = 30
     EXPORT_TO_FILE_ENABLED = False
 
     APP_HEARTBEAT_URL = 'https://zjobs.herokuapp.com/'
