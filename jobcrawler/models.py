@@ -222,7 +222,7 @@ class BaseObject(BaseItem):
             conn.close()
 
     def __repr__(self):
-        return json.dumps(self, cls=CustomJsonEncoder, sort_keys=True, indent=4)
+        return json.dumps(self, cls=CustomJsonEncoder, sort_keys=True, indent=None, separators=(',', ':'))
 
 
 class DatabaseError(Exception):
