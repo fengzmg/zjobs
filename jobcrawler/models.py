@@ -21,7 +21,6 @@ from app.context import Config as config
 
 
 class BaseObject(BaseItem):
-
     datasource = Datasource.get_instance()
     property_names = []
     key_properties = []
@@ -38,7 +37,6 @@ class BaseObject(BaseItem):
         for property_name, property_value in dict_obj.iteritems():
             if hasattr(new_obj, property_name):
                 setattr(new_obj, property_name, property_value)
-
         return new_obj
 
     @classmethod
@@ -47,22 +45,16 @@ class BaseObject(BaseItem):
         import unicodecsv
         import tempfile
         import os
-
         tmp_file = (tempfile.NamedTemporaryFile(prefix='zjobs.%s.' % cls.__name__, suffix=('.%s' % format), delete=False)).name
-
         try:
             records = cls.findall()
-
             if format.lower() == 'xlsx':
                 workbook = xlsxwriter.Workbook(tmp_file, {'default_date_format': 'yyyy-mm-dd'})
                 worksheet = workbook.add_worksheet('crawled_jobs')
                 worksheet.set_column('A:M', 40)
-
                 worksheet.write_row(0, 0, [property_name.upper() for property_name in cls.property_names])
-
                 for rowIdx, record in enumerate(records):
                     worksheet.write_row(rowIdx + 1, 0, [getattr(record, property_name) for property_name in cls.property_names])
-
                 workbook.close()
             elif format.lower() == 'csv':
                 with open(tmp_file, 'w') as f:
@@ -70,24 +62,19 @@ class BaseObject(BaseItem):
                     writer.writerow([property_name.upper() for property_name in cls.property_names])
                     for record in records:
                         writer.writerow([getattr(record, property_name) for property_name in cls.property_names])
-
             elif format.lower() == 'txt':
                 with open(tmp_file, 'w') as f:
                     f.write('\t'.join([property_name.upper() for property_name in cls.property_names]) + '\n')
                     for record in records:
                         f.write('\t'.join([repr(getattr(record, property_name)) if getattr(record, property_name) is not None else ''  for property_name in cls.property_names]) + '\n')
-
             else:
                 raise Exception("'%s' format is not supported" % format)
-
             file_content = open(tmp_file, 'rb').read()
             return file_content
-
         except Exception as e:
             logger.error(e)
             logger.error('Unable to extract all records as bytes')
             raise e
-
         finally:
             os.remove(tmp_file)
 
@@ -153,11 +140,9 @@ class BaseObject(BaseItem):
     def save(self):
         if self:
             if self.find(self) is None:
-
                 conn = self.connect_db()
                 try:
                     c = conn.cursor()
-
                     c.execute('INSERT INTO ' + self.table_name +
                               '(' +
                               ', '.join(self.property_names) +
@@ -173,13 +158,11 @@ class BaseObject(BaseItem):
                     logger.error(e)
                 finally:
                     conn.close()
-
             else:
                 self.update()
 
     @classmethod
     def count(cls, criteria=None):
-
         conn = cls.connect_db()
         try:
             c = conn.cursor()
@@ -194,18 +177,13 @@ class BaseObject(BaseItem):
 
     @classmethod
     def find_with_pagination(cls, page_request={'page_no': 1, 'size': 25, 'criteria': None}):
-
         size = page_request.get('size', 25)
         page_no = page_request.get('page_no', 1)
         criteria = page_request.get('criteria', None)
-
         conn = cls.connect_db()
-
         try:
             c = conn.cursor()
-
             if not criteria:
-
                 c.execute('SELECT * FROM ( \
                         SELECT ' + ','.join(cls.property_names) + ' FROM ' + cls.table_name +
                           ' ORDER BY ' + ', '.join(['%s %s' % (property, order) for (property, order) in cls.order_properties]) +
@@ -307,9 +285,7 @@ class JobItem(BaseObject):
     property_names = ['job_title', 'job_desc', 'job_details_link', 'job_location', 'job_country',
                       'salary', 'employer_name', 'publish_date', 'contact', 'source', 'crawled_date']
     key_properties = ['job_title']
-
     order_properties = [('publish_date', 'DESC')]
-
     table_name = 'CRAWLED_JOBS'
 
     def __init__(self):
@@ -330,7 +306,6 @@ class JobItem(BaseObject):
 
         if item:
             job_title = item.job_title
-
             if job_title:
                 conn = cls.connect_db()
                 try:
@@ -347,7 +322,6 @@ class JobItem(BaseObject):
             else:
                 logger.debug('item title is None.. hence returning true in is_exist()')
                 return True
-
         else:
             logger.debug('item is None.. hence returning true in is_exist()')
             return True
