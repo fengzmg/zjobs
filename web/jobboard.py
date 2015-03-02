@@ -2,22 +2,23 @@
 from functools import wraps
 import mimetypes
 import os
+from threading import Thread
+import datetime
 from flask.globals import current_app
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask import Flask, redirect, url_for, make_response, request, g
+from flask.templating import render_template
+from flask_sockets import Sockets
+
+from werkzeug.routing import BaseConverter
+import time
 import pg8000
-import jobcrawler
 
 try:
     import simplejson as json
 except ImportError:
     import json
-import datetime
 
-from flask import Flask, redirect, url_for, make_response, request, g
-from flask.templating import render_template
-from werkzeug.routing import BaseConverter
-
-import app as app_context
 from app.context import Scheduler, logger
 from app.context import Config
 from app.run import AppRunner
@@ -26,6 +27,7 @@ from jobcrawler.models import JobItem, RejectionPattern, BlockedContact, User, C
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '1234567890'
+app.debug = Config.WEB_DEBUG_ENABLED
 
 class RegexConverter(BaseConverter):
     def __init__(self, map, *items):
@@ -34,10 +36,13 @@ class RegexConverter(BaseConverter):
 
 app.url_map.converters['regex'] = RegexConverter
 
-
+# flask_login setup
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+# flask_sockets setup
+sockets = Sockets(app)
+log_monitoring_thread = None
 
 ### decorator for the @roles_required
 def roles_required(required_role):
@@ -210,19 +215,35 @@ def register_user():
     return redirect(url_for('index'))
 
 
-@app.route('/admin/logs/view/<lines>', methods=['GET'])
-@roles_required('admin')
-def show_logs(lines='1500'):
-    if lines == 'all':
-        lines = '10000'  # max to load 10000 records
-        output = os.popen('tail -n %d %s' % (int(lines), Config.LOG_FILE)).readlines()[::-1]
-    elif lines == 'track':
+# @app.route('/admin/logs/view/<lines>', methods=['GET'])
+# @roles_required('admin')
+# def show_logs(lines='1500'):
+#     if lines == 'all':
+#         lines = '10000'  # max to load 10000 records
+#         output = os.popen('tail -n %d %s' % (int(lines), Config.LOG_FILE)).readlines()[::-1]
+#     elif lines == 'track':
+#         cmd = 'awk -v Time="`date -d\'now-5 seconds\' \'+[%Y-%m-%d %H:%M:%S\'`" \'{if($0 > Time) print $0}\' ' +  Config.LOG_FILE
+#         #print cmd
+#         output = os.popen(cmd).readlines()[::-1]
+#     elif lines.isnumeric():
+#         output = os.popen('tail -n %d %s' % (int(lines), Config.LOG_FILE)).readlines()[::-1]
+#
+#
+#     return json.dumps(output)
+
+@sockets.route('/logs')
+def logs_socket(ws):
+    message = ws.receive()
+    while True:
+        logger.info('server received from client: ' + datetime.datetime.now().isoformat())
         cmd = 'awk -v Time="`date -d\'now-5 seconds\' \'+[%Y-%m-%d %H:%M:%S\'`" \'{if($0 > Time) print $0}\' ' +  Config.LOG_FILE
-        #print cmd
-        output = os.popen(cmd).readlines()[::-1]
-    elif lines.isnumeric():
-        output = os.popen('tail -n %d %s' % (int(lines), Config.LOG_FILE)).readlines()[::-1]
-    return json.dumps(output)
+        # logger.info(cmd)
+        output = os.popen(cmd).readlines()
+
+        ws.send('\n'.join(output)) if len(output) > 0 else None
+        time.sleep(5)
+
+
 
 @app.route('/admin/logs/purge', methods=['GET'])
 @roles_required('admin')

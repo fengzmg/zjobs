@@ -1,6 +1,7 @@
 APScheduler==3.0.1
 Flask==0.10.1
 Flask-Login==0.2.11
+Flask-Sockets==0.1
 Jinja2==2.7.3
 MarkupSafe==0.23
 Scrapy==0.24.4
@@ -12,7 +13,11 @@ cffi==0.8.6
 cryptography==0.6.1
 cssselect==0.9.1
 futures==2.2.0
-gunicorn==19.1.1
+gevent==1.0.1
+gevent-socketio==0.3.6
+gevent-websocket==0.9.3
+greenlet==0.4.5
+gunicorn==0.16.1
 itsdangerous==0.24
 lxml==3.3.3
 pg8000==1.10.1

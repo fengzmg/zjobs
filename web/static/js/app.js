@@ -687,8 +687,8 @@ angular.module('myApp', [
         prompt: 'zjobs admin> '});
 
  }])
- .controller('logsController', ['$scope','$http', '$interval', function($scope, $http, $interval) {
-    $scope.fetchData = function(){
+ .controller('logsController', ['$scope','$http', '$timeout', function($scope, $http, $timeout) {
+    /*$scope.fetchData = function(){
         $http.get('/admin/logs/view/1500').success(function(data, status, headers, config){
             $scope.records=data;
         }).error(function(data, status, headers, config){
@@ -696,7 +696,7 @@ angular.module('myApp', [
         });
     }
 
-    $scope.fetchData();
+    //$scope.fetchData();
 
     $scope.retrieveAllLogs = function(e){
         $interval.cancel( $scope.log_refresh_repeater);
@@ -722,9 +722,45 @@ angular.module('myApp', [
                 alert('Unable to load records');
             });
         }, 5000);
+    }*/
+
+    $scope.records = [];
+    var namespace = '/logs';
+    var socket = new WebSocket('ws://' + document.domain + ':' + location.port + namespace);
+    socket.onopen = function() {
+        socket.send('client connected!');
+        console.log('CONNECTED: socketio client connected');
+    };
+
+    socket.onmessage = function(event) {
+        
+
+        $scope.$apply(function(){
+            var message = event.data;
+            console.log('MESSAGE: socketio client received: ' + message);
+            $scope.records = $scope.records.concat(message.split('\n'));
+        });
+        
+    };
+
+    socket.onerror = function(){
+        console.log('ERROR: socketio client connection error');
     }
 
-    $scope.trackLogs();
+    socket.onclose = function(){
+        console.log('CLOSE: socketio client connection closed');
+    }
+
+    /*socket.on('new_logs', function(message){
+        
+    });*/
+
+    /*$http.get('/admin/logs/subscribe').success(function(data, status, headers, config){
+
+        }).error(function(data, status, headers, config){
+            alert('Unable to load records');
+        });*/
+    //$scope.trackLogs();
 
  }])
  .controller('usersController', ['$scope','$http', function($scope, $http) {

@@ -1,63 +1,77 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN"
-   "http://www.w3.org/TR/html4/strict.dtd">
-<!--[if lt IE 7]>      <html lang="en" ng-app="myApp" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html lang="en" ng-app="myApp" class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html lang="en" ng-app="myApp" class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]><!--> <html lang="en" ng-app="myApp" class="no-js"> <!--<![endif]-->
-<!--[if !IE ]><!--> <html ng-app="myApp"> <!--<![endif]-->
+        "http://www.w3.org/TR/html4/strict.dtd">
+<!--[if lt IE 7]>
+<html lang="en" ng-app="myApp" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>
+<html lang="en" ng-app="myApp" class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>
+<html lang="en" ng-app="myApp" class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html lang="en" ng-app="myApp" class="no-js"> <!--<![endif]-->
+<!--[if !IE ]><!-->
+<html ng-app="myApp"> <!--<![endif]-->
 <head lang="en">
     <meta charset="utf-8">
-  	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="description" content="">
-  	<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Zorg.工作</title>
     <link rel='shortcut icon' href="{{ url_for('static', filename='image/favicon.ico') }}"/>
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.css">
-    <link rel="stylesheet" type="text/css" href="https://dl.dropboxusercontent.com/u/7111466/cdn/css/jquery.terminal.css">
+    <link rel="stylesheet" type="text/css"
+          href="https://dl.dropboxusercontent.com/u/7111466/cdn/css/jquery.terminal.css">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
 <body>
-	<!-- Google Tag Manager -->
-    <noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-W3CH83"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+<!-- Google Tag Manager -->
+<noscript>
+    <iframe src="//www.googletagmanager.com/ns.html?id=GTM-W3CH83"
+            height="0" width="0" style="display:none;visibility:hidden"></iframe>
+</noscript>
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
     new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
     j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     '//www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-W3CH83');</script>
-    <!-- End Google Tag Manager -->
-    
-    <div class="container">
-        <div class="page-header">
-            <div style="display:inline-block; width:25%;">
-                <h3><a href="/"><b>Zorg.工作</b></a></h3>
-            </div>
-            <div class="text-right" style="display:inline-block;width:74%;">
-                <div menu></div>
-                {% if g.user.is_authenticated() %}
-                    <span><a href="">{{ g.user.username }}</a>&nbsp;<a href="{{ url_for('logout') }}" class="glyphicon glyphicon-off"></a></span>
-                {% else %}
-                    <span user-login><a href="#">login <span class="glyphicon glyphicon-off"></span></a></span>
-                {% endif %}
-            </div>
-        
+    })(window,document,'script','dataLayer','GTM-W3CH83');
+</script>
+<!-- End Google Tag Manager -->
+
+<div class="container">
+    <div class="page-header">
+        <div style="display:inline-block; width:25%;">
+            <h3><a href="/"><b>Zorg.工作</b></a></h3>
         </div>
-      <div ng-view></div>
-  </div>
+        <div class="text-right" style="display:inline-block;width:74%;">
+            <div menu></div>
+            {% if g.user.is_authenticated() %}
+            <span><a href="">{{ g.user.username }}</a>&nbsp;<a href="{{ url_for('logout') }}"
+                                                               class="glyphicon glyphicon-off"></a></span>
+            {% else %}
+            <span user-login><a href="#">login <span class="glyphicon glyphicon-off"></span></a></span>
+            {% endif %}
+        </div>
 
-  <footer class="" role="contentinfo">
-      <div class="container">
-          
-      </div>
-  </footer>
+    </div>
+    <div ng-view></div>
+</div>
 
-<script type="text/javascript" src="https://dl.dropboxusercontent.com/u/7111466/cdn/js/jquery-1.11.1.js"></script>
-<script type="text/javascript" src="https://dl.dropboxusercontent.com/u/7111466/cdn/js/jquery.terminal-0.8.8.js"></script>
-<script type="text/javascript" src="https://dl.dropboxusercontent.com/u/7111466/cdn/js/boostrap.js"></script>
-<script type="text/javascript" src="https://dl.dropboxusercontent.com/u/7111466/cdn/js/angular-1.2.0.js"></script>
-<script type="text/javascript" src="https://dl.dropboxusercontent.com/u/7111466/cdn/js/angular-resource-1.2.0.js"></script>
-<script type="text/javascript" src="https://dl.dropboxusercontent.com/u/7111466/cdn/js/angular-route-1.2.0.js"></script>
-<script type="text/javascript" src="https://dl.dropboxusercontent.com/u/7111466/cdn/js/angular-sanitize-1.2.0.js"></script>
+<footer class="" role="contentinfo">
+    <div class="container">
+
+    </div>
+</footer>
+
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.1/jquery.js"></script>
+<script type="text/javascript"
+        src="https://dl.dropboxusercontent.com/u/7111466/cdn/js/jquery.terminal-0.8.8.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.0/js/bootstrap.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.0/angular.js"></script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.0/angular-resource.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.0/angular-route.js"></script>
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.2.0/angular-sanitize.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script> -->
 <script type="text/javascript" src="{{ url_for('static', filename='js/app.js')}}"></script>
 </body>
 </html>
